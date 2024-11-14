@@ -1,0 +1,15 @@
+import openfl.utils.Assets;
+
+import funkin.Paths;
+import funkin.modding.base.ScriptedFlxRuntimeShader;
+
+class MODLAUNCHER_DesaturateShader extends ScriptedFlxRuntimeShader {
+	public function new() {
+		super(Assets.getText(Paths.frag("modlauncher/desaturate")));
+		
+		set_mix(0);
+	}
+	
+	public function set_mix(mix:Float):Void {setFloat("u_mix", mix);}
+	public function get_mix():Float {return getFloat("u_mix");}
+}

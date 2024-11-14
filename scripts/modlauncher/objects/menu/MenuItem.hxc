@@ -1,0 +1,116 @@
+import funkin.modding.base.ScriptedFlxSpriteGroup;
+
+typedef MenuItemData = {
+	custom_data:Dynamic,
+	
+	on_focus:Null<(ScriptedFlxSpriteGroup)->Void>,
+	on_unfocus:Null<(ScriptedFlxSpriteGroup)->Void>,
+	on_direction:Null<(Array<Bool>)->Void>,
+	
+	on_press:Null<()->Void>,
+	on_release:Null<()->Void>,
+	
+	on_update:Null<(Float)->Void>,
+	
+	auto_navigate:Bool
+}
+
+class MODLAUNCHER_MenuItem extends ScriptedFlxSpriteGroup {
+	private var initialized:Bool = false;
+	
+	public function setup(data:Dynamic):Void {
+		if (initialized) {
+			return;
+		}
+		
+		custom_data = data.custom_data;
+		
+		_on_focus = data.on_focus;
+		_on_unfocus = data.on_unfocus;
+		_on_direction = data.on_direction;
+		
+		_on_press = data.on_press;
+		_on_release = data.on_release;
+		
+		_on_update = data.on_update;
+		
+		auto_navigate = data.auto_navigate == null ? true : data.auto_navigate;
+		
+		initialized = true;
+	}
+	
+	public var parent:ScriptedFlxSpriteGroup = null;
+	
+	public var custom_data:Dynamic = null;
+	
+	private var _on_focus:Null<(ScriptedFlxSpriteGroup)->Void> = null;
+	public function on_focus(prev:ScriptedFlxSpriteGroup):Void {
+		if (_on_focus != null) {
+			_on_focus(prev);
+		}
+	}
+	
+	private var _on_unfocus:Null<(ScriptedFlxSpriteGroup)->Void> = null;
+	public function on_unfocus(next:ScriptedFlxSpriteGroup):Void {
+		if (_on_unfocus != null) {
+			_on_unfocus(next);
+		}
+	}
+	
+	private var _on_direction:Null<(Array<Bool>)->Void> = null;
+	public function on_direction(directions:Array<Bool>):Void {
+		if (_on_direction != null) {
+			_on_direction(directions);
+		}
+	}
+	
+	private var _on_press:Null<()->Void> = null;
+	public function on_press():Void {
+		if (_on_press != null) {
+			_on_press();
+		}
+	}
+	
+	private var _on_release:Null<()->Void> = null;
+	public function on_release():Void {
+		if (_on_release != null) {
+			_on_release();
+		}
+	}
+	
+	private var _on_update:Null<(Float)->Void> = null;
+	public function on_update(elapsed:Float):Void {
+		if (_on_update != null) {
+			_on_update(elapsed);
+		}
+	}
+	
+	public var auto_navigate:Bool = true;
+	
+	public var enabled:Bool = true;
+	public var focused:Bool = false;
+	
+	public override function destroy():Void {
+		super.destroy();
+		
+		enabled = false;
+		focused = false;
+		
+		parent = null;
+		
+		custom_data = null;
+		
+		_on_focus = null;
+		_on_unfocus = null;
+		_on_direction = null;
+		
+		_on_press = null;
+		_on_release = null;
+		
+		_on_update = null;
+		
+		auto_navigate = false;
+		
+		initialized = false;
+	}
+}

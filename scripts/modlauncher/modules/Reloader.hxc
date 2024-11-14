@@ -1,0 +1,64 @@
+import haxe.ds.IntMap;
+
+import thx.Objects;
+
+import flixel.FlxG;
+
+import funkin.modding.base.ScriptedMusicBeatState;
+import funkin.modding.module.ModuleHandler;
+import funkin.modding.module.ScriptedModule;
+
+typedef Reload = {
+	module:String,
+	variables:Array<()->Dynamic>
+}
+
+class MODLAUNCHER_Reloader extends ScriptedModule {
+	public function new() {
+		super("MODLAUNCHER_Reloader", -2147483647);
+	}
+	
+	public var on_reload_pre:IntMap<Reload> = new IntMap();
+	public var on_reload_post:IntMap<Reload> = new IntMap();
+	private var reload:(IntMap<Reload>)->Void = function(reload_map:IntMap<Reload>):void {
+		var keys:Array<Int> = new Array();
+		for (key in reload_map.keys()) {
+			keys.push(key);
+		}
+		
+		keys.sort(function(a:Int, b:Int):Int {
+			return a - b;
+		});
+		
+		for (key in keys) {
+			ModuleHandler.getModule(reload_map.get(key).module).scriptGet("initialize")();
+			
+			if (Objects.getPath(reload_map.get(key), "variables") != null) {
+				for (variable in reload_map.get(key).variables) {
+					ModuleHandler.getModule(reload_map.get(key).module).scriptSet(
+						variable().name,
+						variable().value
+					);
+				}
+			}
+		}
+	}
+	
+	override public function onDestroy(event:ScriptEvent):Void {
+		FlxG.signals.preStateSwitch.addOnce(function():Void {
+			reload(on_reload_pre);
+		});
+		
+		FlxG.signals.postStateSwitch.addOnce(function():Void {
+			reload(on_reload_post);
+		});
+	}
+	
+	public function clear():Void {
+		on_reload_pre.clear();
+		on_reload_pre = new IntMap();
+		
+		on_reload_post.clear();
+		on_reload_post = new IntMap();
+	}
+}

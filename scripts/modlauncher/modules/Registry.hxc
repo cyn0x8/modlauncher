@@ -1,0 +1,64 @@
+import Float;
+import String;
+
+import haxe.ds.StringMap;
+
+import thx.Objects;
+import thx.Types;
+
+import funkin.modding.module.ModuleHandler;
+import funkin.modding.module.ScriptedModule;
+
+import StringTools;
+
+// see readme for documentation
+
+class MODLAUNCHER_Registry extends ScriptedModule {
+	public function new() {
+		super("MODLAUNCHER_Registry", -2147483646);
+	}
+	
+	public var registry:StringMap<Dynamic> = new StringMap();
+	public function bind(data:Dynamic):Null<Dynamic> {
+		if (!Types.isAnonymousObject(data)) {
+			return null;
+		}
+		
+		var target:Null<String> = Objects.getPath(data, "target");
+		if (target == null || !Std.isOfType(target, String) || StringTools.trim(target) == "") {
+			return null;
+		}
+		
+		var name:Null<String> = Objects.getPath(data, "name");
+		if (name == null || !Std.isOfType(name, String) || StringTools.trim(name) == "") {
+			return null;
+		}
+		
+		var logo_path:Null<String> = Objects.getPath(data, "logo_path");
+		if (logo_path == null || !Std.isOfType(logo_path, String)) {
+			Objects.setPath(data, "logo_path", "modlauncher/meta/icon");
+		}
+		
+		var select_sound_path:Null<String> = Objects.getPath(data, "select_sound_path");
+		if (select_sound_path == null || !Std.isOfType(select_sound_path, String) || StringTools.trim(select_sound_path) == "") {
+			select_sound_path = "confirmMenu";
+		}
+		
+		var select_duration:Null<Float> = Objects.getPath(data, "select_duration");
+		if (select_duration == null || !Std.isOfType(select_duration, Float)) {
+			Objects.setPath(data, "select_duration", 1.5);
+		}
+		
+		Objects.setPath(data, "select_duration", Math.max(1.5, select_duration));
+		
+		for (func_name in ["on_setup", "on_update", "on_focus", "on_unfocus", "on_select", "on_cancel", "on_init"]) {
+			if (Objects.getPath(data, func_name) == null) {
+				Objects.setPath(data, func_name, function():Void {});
+			}
+		}
+		
+		registry.set(name, data);
+		
+		return data;
+	}
+}

@@ -1,0 +1,84 @@
+import flixel.FlxG;
+import flixel.FlxState;
+import flixel.addons.transition.TransitionData;
+import flixel.addons.transition.TransitionCameraMode;
+import flixel.math.FlxPoint;
+import flixel.tweens.FlxEase;
+import flixel.tweens.FlxTween;
+import flixel.util.FlxTimer;
+
+import funkin.graphics.FunkinCamera;
+import funkin.modding.base.ScriptedFlxSpriteGroup;
+import funkin.modding.module.ModuleHandler;
+import funkin.modding.module.ScriptedModule;
+import funkin.ui.mainmenu.MainMenuState;
+
+class MODLAUNCHER_Injector extends ScriptedModule {
+	public function new() {
+		super("MODLAUNCHER_Injector", 2147483647);
+	}
+	
+	private var cam_ui:FunkinCamera = null;
+	private var cam_bg:FunkinCamera = null;
+	
+	private var menu:ScriptedModule = null;
+	
+	override public function onStateChangeEnd(event:StateChangeScriptEvent):Void {
+		if (Std.isOfType(event.targetState, MainMenuState)) {
+			try_inject(event.targetState);
+			FlxG.signals.preStateSwitch.addOnce(function():Void {
+				destroy();
+			});
+		}
+	}
+	
+	private var injected:Bool = false;
+	public function try_inject(state:FlxState):Void {
+		if (injected) {
+			return;
+		}
+		
+		cam_bg = new FunkinCamera("modlauncher_bg", 0, 0, 1280, 720, 0);
+		cam_bg.bgColor = 0x00000000;
+		FlxG.cameras.add(cam_bg, false);
+		
+		cam_ui = new FunkinCamera("modlauncher_cam", 0, 0, 1280, 720, 1);
+		cam_ui.bgColor = 0x00000000;
+		FlxG.cameras.add(cam_ui, false);
+		
+		menu = ModuleHandler.getModule("MODLAUNCHER_LauncherMenu");
+		menu.scriptCall("setup");
+		
+		FlxG.state.add(menu.scriptGet("menu"));
+		
+		menu.scriptCall("fix_scrolls");
+		
+		FlxG.state.leftWatermarkText.cameras = [cam_ui];
+		FlxG.state.remove(FlxG.state.leftWatermarkText, true);
+		FlxG.state.add(FlxG.state.leftWatermarkText);
+		
+		FlxG.cameras.remove(cam_ui, false);
+		FlxG.cameras.add(cam_ui, false);
+		
+		injected = true;
+	}
+	
+	private function destroy():Void {
+		if (injected) {
+			menu.scriptCall("destroy");
+			menu = null;
+			
+			FlxG.cameras.remove(cam_ui);
+			cam_ui.destroy();
+			cam_ui = null;
+			
+			FlxG.state.leftWatermarkText.cameras = [FlxG.camera];
+		}
+		
+		injected = false;
+	}
+	
+	override public function onDestroy(event:ScriptEvent):Void {
+		destroy();
+	}
+}

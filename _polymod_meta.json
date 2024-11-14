@@ -1,0 +1,14 @@
+{
+	"title": "modlauncher",
+	"description": "an ingame launcher for friday night funkin mod states",
+	"homepage": "https://git.gay/cyn0x8/modlauncher",
+	
+	"contributors": [
+		{"name": "cyn0x8", "role": "coder"}
+	],
+	
+	"license": "MIT",
+	
+	"api_version": "0.5.0",
+	"mod_version": "1.0.0"
+}

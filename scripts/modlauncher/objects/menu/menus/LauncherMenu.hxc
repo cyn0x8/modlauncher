@@ -1,0 +1,613 @@
+import String;
+
+import haxe.ds.StringMap;
+
+import openfl.filters.ShaderFilter;
+
+import flixel.FlxG;
+import flixel.addons.display.FlxBackdrop;
+import flixel.addons.display.FlxGridOverlay;
+import flixel.group.FlxTypedSpriteGroup;
+import flixel.text.FlxText;
+import flixel.tweens.FlxEase;
+import flixel.tweens.FlxTween;
+import flixel.tweens.misc.NumTween;
+import flixel.util.FlxSpriteUtil;
+import flixel.util.FlxTimer;
+
+import funkin.Paths;
+import funkin.PlayerSettings;
+import funkin.graphics.FunkinCamera;
+import funkin.graphics.FunkinSprite;
+import funkin.input.Controls;
+import funkin.modding.base.ScriptedFlxSpriteGroup;
+import funkin.modding.base.ScriptedFlxRuntimeShader;
+import funkin.modding.base.ScriptedMusicBeatState;
+import funkin.modding.module.ModuleHandler;
+import funkin.modding.module.ScriptedModule;
+import funkin.util.MathUtil;
+
+import StringTools;
+
+class MODLAUNCHER_LauncherMenu extends ScriptedModule {
+	public function new() {
+		super("MODLAUNCHER_LauncherMenu");
+	}
+	
+	public var parent:Null<ScriptedModule> = null;
+	
+	public var exists:Bool = false;
+	
+	private var overlay_ui:Null<FlxBackdrop> = null;
+	private var overlay_bg:Null<FlxBackdrop> = null;
+	
+	private var group_ui:Null<FlxTypedSpriteGroup> = null;
+	private var group_bg:Null<FlxTypedSpriteGroup> = null;
+	
+	private var logo:Null<FunkinSprite> = null;
+	
+	private var menu:Null<ScriptedFlxSpriteGroup> = null;
+	private var launcher_entries:Array<ScriptedFlxSpriteGroup> = new Array();
+	
+	private var launcher_cameras:Array<FunkinCamera> = new Array();
+	
+	private var launcher_name_group:Null<FlxTypedSpriteGroup> = null;
+	private var launcher_names:Array<FlxText> = new Array();
+	
+	private var no_mods_text:Null<FlxText> = null;
+	
+	private var grid:Null<FlxBackdrop> = null;
+	
+	private var desaturate_shader:Null<ScriptedFlxRuntimeShader> = null;
+	
+	private var menu_mix:Float = 0;
+	private var menu_tween:Null<NumTween> = null;
+	
+	private var selecting:Bool = false;
+	private var select_timer:Null<FlxTimer> = null;
+	private var select_tween:Null<NumTween> = null;
+	
+	private var font_path:String = "modlauncher/jetbrains_mono_medium.ttf";
+	
+	public function setup():Void {
+		if (exists) {
+			return;
+		}
+		
+		ModuleHandler.getModule("MODLAUNCHER_Sound").scriptCall("set", ["bgm", {
+			path: "chartEditorLoop/chartEditorLoop",
+			volume: 0,
+			music: true,
+			loop: true
+		}, true, true]);
+		
+		parent = ModuleHandler.getModule("MODLAUNCHER_Injector");
+		
+		menu = ScriptedFlxSpriteGroup.init("MODLAUNCHER_Menu");
+		
+		group_bg = new FlxTypedSpriteGroup();
+		menu.add(group_bg);
+		group_bg.cameras = [parent.scriptGet("cam_bg")];
+		
+		grid = new FlxBackdrop(FlxGridOverlay.createGrid(64, 64, 128, 128, true, 0xffe8e8e8, 0xffd0d0d0));
+		grid.velocity.y = -16;
+		grid.blend = 12; // screen
+		grid.alpha = 0.0001;
+		group_bg.add(grid);
+		
+		var registry:StringMap<Dynamic> = ModuleHandler.getModule("MODLAUNCHER_Registry").scriptGet("registry");
+		if (registry.iterator().hasNext()) {
+			var entry_sorted:Array<Dynamic> = new Array();
+			for (entry in registry) {
+				entry_sorted.push(entry);
+			}
+			
+			entry_sorted.sort(function(a:Dynamic, b:Dynamic):Int {
+				return a.name > b.name ? 1 : -1;
+			});
+			
+			for (i in 0 ... entry_sorted.length) {
+				var idx:Int = i;
+				var entry:Dynamic = entry_sorted[idx];
+				
+				var entry_camera:FunkinCamera = new FunkinCamera("modlauncher_cam (" + entry.name + ")", 0, 720, 1280, 450, 1);
+				entry_camera.bgColor = 0x00000000;
+				FlxG.cameras.add(entry_camera, false);
+				
+				entry.cam = entry_camera;
+				launcher_cameras.push(entry_camera);
+				
+				var entry_item:ScriptedFlxSpriteGroup = ScriptedFlxSpriteGroup.init("MODLAUNCHER_MenuItem");
+				
+				entry.bg_group = new FlxTypedSpriteGroup();
+				entry_item.add(entry.bg_group);
+				
+				entry.ui_group = new FlxTypedSpriteGroup();
+				entry_item.add(entry.ui_group);
+				
+				var entry_logo:FunkinSprite = new FunkinSprite().loadTexture(entry.logo_path);
+				var entry_scale:Float = 350 / entry_logo.height;
+				entry_logo.scale.set(entry_scale, entry_scale);
+				entry_logo.updateHitbox();
+				entry_logo.setPosition(640 - entry_logo.width / 2, entry_camera.height / 2 - entry_logo.height / 2);
+				entry.ui_group.add(entry_logo);
+				
+				entry.logo = entry_logo;
+				
+				entry_item.scriptCall("setup", [{
+					custom_data: entry,
+					
+					on_press: function():Void {
+						menu.scriptSet("enabled", false);
+						
+						ModuleHandler.getModule("MODLAUNCHER_Sound").scriptCall("fade_out", ["bgm", 0.1, 0, null]);
+						
+						ModuleHandler.getModule("MODLAUNCHER_Sound").scriptCall("set", ["select", {
+							path: entry.select_sound_path,
+							volume: 0.75,
+							music: false,
+							loop: false
+						}, true, true]);
+						
+						FlxTween.globalManager.cancelTweensOf(overlay_bg, ["alpha"]);
+						FlxTween.globalManager.tween(overlay_bg, {alpha: 1}, 0.1, {ease: FlxEase.cubeOut});
+						
+						select_timer = new FlxTimer().start(entry.select_duration - 0.5, function():Void {
+							selecting = false;
+							
+							FlxTween.globalManager.cancelTweensOf(overlay_ui, ["alpha"]);
+							FlxTween.globalManager.tween(overlay_ui, {alpha: 1}, 0.5, {ease: FlxEase.cubeInOut});
+							
+							ModuleHandler.getModule("MODLAUNCHER_Sound").scriptCall("fade_out", ["select", 0.5, 0, null]);
+							
+							new FlxTimer().start(0.5, function():Void {
+								switch_to(entry.target);
+							});
+						});
+						
+						new FlxTimer().start(0.0001, function():Void {
+							selecting = true;
+						});
+						
+						entry.on_select(entry);
+					},
+					
+					on_focus: function():Void {
+						menu.scriptCall("debounce", [0.2]);
+						
+						ModuleHandler.getModule("MODLAUNCHER_Sound").scriptCall("set", ["scroll", {
+							path: "scrollMenu",
+							volume: 0.75,
+							music: false,
+							loop: false
+						}, true, true]);
+						
+						entry_camera.y = 360 - entry_camera.height / 2;
+						
+						FlxTween.globalManager.cancelTweensOf(entry_camera, ["x"]);
+						
+						var left:Bool = menu.scriptGet("prev_selection") > idx;
+						entry_camera.x = left ? -1280 : 1280;
+						FlxTween.globalManager.tween(entry_camera, {x: 0}, 0.2, {ease: FlxEase.expoOut});
+						
+						entry.on_focus();
+					},
+					
+					on_unfocus: function():Void {
+						FlxTween.globalManager.cancelTweensOf(entry_camera, ["x"]);
+						entry_camera.x = 0;
+						
+						var left:Bool = menu.scriptGet("selection") < idx;
+						FlxTween.globalManager.tween(entry_camera, {x: left ? 1280 : -1280}, 0.2, {ease: FlxEase.expoOut, onComplete: function():Void {
+							entry_camera.y = 720;
+						}});
+						
+						entry.on_unfocus();
+					},
+					
+					on_update: function(elapsed:Float):Void {
+						update_text(idx, elapsed);
+						
+						entry.on_update(entry, elapsed);
+					}
+				}]);
+				
+				launcher_entries.push(entry_item);
+				
+				group_bg.add(entry_item);
+				entry_item.cameras = [entry_camera];
+				
+				entry.on_setup(entry);
+			}
+		} else {
+			no_mods_text = new FlxText(0, 0, 1000, "no launchers bound!", 64);
+			no_mods_text.font = Paths.font(font_path);
+			no_mods_text.alignment = "center";
+			no_mods_text.scale.set(0.5, 0.5);
+			no_mods_text.updateHitbox();
+			no_mods_text.color = 0xff000000;
+			no_mods_text.alpha = 0.0001;
+			no_mods_text.antialiasing = true;
+			group_bg.add(no_mods_text);
+			no_mods_text.screenCenter();
+		}
+		
+		launcher_name_group = new FlxTypedSpriteGroup();
+		launcher_name_group.y = 1000;
+		group_bg.add(launcher_name_group);
+		
+		for (i in 0 ... launcher_entries.length) {
+			var entry_text_wrapper:FlxTypedSpriteGroup = new FlxTypedSpriteGroup();
+			launcher_name_group.add(entry_text_wrapper);
+			
+			var entry_text:FlxText = new FlxText(0, 0, null, launcher_entries[i].scriptGet("custom_data").name, 64);
+			entry_text_wrapper.add(entry_text);
+			entry_text.font = Paths.font(font_path);
+			entry_text.alignment = "center";
+			entry_text.offset.set(entry_text.width / 2, entry_text.height / 2);
+			entry_text.color = 0xff000000;
+			entry_text.antialiasing = true;
+			launcher_names.push(entry_text);
+			
+			update_text(i, 0, true);
+		}
+		
+		overlay_bg = new FlxBackdrop().makeGraphic(1280, 720, 0xff000000);
+		overlay_bg.alpha = 0.0001;
+		group_bg.add(overlay_bg);
+		
+		group_ui = new FlxTypedSpriteGroup();
+		menu.add(group_ui);
+		group_ui.cameras = [parent.scriptGet("cam_ui")];
+		
+		logo = new FunkinSprite().loadTexture("modlauncher/menu/logo");
+		logo.scale.set(0.7, 0.7);
+		logo.updateHitbox();
+		logo.setPosition(1280, 25);
+		logo.antialiasing = false;
+		group_ui.add(logo);
+		
+		menu.scriptCall("setup", [{
+			items: launcher_entries,
+			
+			size_x: launcher_entries.length,
+			size_y: 1,
+			
+			wrap_x: true,
+			wrap_y: false,
+			
+			on_enter: function():Void {
+				open_menu();
+			},
+			
+			on_back: function():Void {
+				close_menu();
+			}
+		}]);
+		
+		desaturate_shader = ScriptedFlxRuntimeShader.init("MODLAUNCHER_DesaturateShader");
+		desaturate_shader.scriptCall("set_mix", [menu_mix]);
+		
+		FlxG.camera.filters = [
+			new ShaderFilter(desaturate_shader)
+		];
+		
+		overlay_ui = new FlxBackdrop().makeGraphic(1280, 720, 0xff000000);
+		overlay_ui.alpha = 0.0001;
+		group_ui.add(overlay_ui);
+		
+		menu.scriptSet("frozen", true);
+		
+		exists = true;
+	}
+	
+	private function open_menu():Void {
+		if (menu.scriptGet("enabled") || FlxG.state.menuItems.busy) {
+			return;
+		}
+		
+		menu.scriptSet("frozen", false);
+		
+		FlxG.state.menuItems.enabled = false;
+		
+		for (i in 0 ... FlxG.state.menuItems.members.length) {
+			FlxTween.globalManager.cancelTweensOf(FlxG.state.menuItems.members[i], ["alpha"]);
+			FlxTween.globalManager.tween(FlxG.state.menuItems.members[i], {alpha: 0.0001}, 0.25, {ease: FlxEase.cubeOut});
+		}
+		
+		FlxTween.globalManager.cancelTweensOf(logo, ["x"]);
+		FlxTween.globalManager.tween(logo, {x: 1280 - logo.width - 25}, 0.25, {ease: FlxEase.expoOut});
+		
+		FlxTween.globalManager.cancelTweensOf(grid, ["alpha"]);
+		FlxTween.globalManager.tween(grid, {alpha: 1}, 0.25, {ease: FlxEase.cubeOut});
+		
+		FlxTween.globalManager.cancelTweensOf(launcher_name_group, ["y"]);
+		FlxTween.globalManager.tween(launcher_name_group, {y: 650}, 0.25, {ease: FlxEase.expoOut});
+		
+		if (menu_tween != null) {
+			menu_tween.cancel();
+			menu_tween.destroy();
+			menu_tween = null;
+		}
+		
+		menu_tween = FlxTween.num(menu_mix, 1, 0.25, {ease: FlxEase.quadInOut, onComplete: function():Void {
+			menu_tween = null;
+		}}, function(v:Float):Void {
+			menu_mix = v;
+		});
+		
+		for (i in 0 ... launcher_cameras.length) {
+			var entry_camera:FunkinCamera = launcher_cameras[i];
+			
+			FlxTween.globalManager.cancelTweensOf(entry_camera, ["x", "y"]);
+			entry_camera.setPosition(0, 720);
+			if (i == menu.scriptGet("selection")) {
+				FlxTween.globalManager.tween(entry_camera, {y: 360 - entry_camera.height / 2}, 0.25, {ease: FlxEase.expoOut});
+			}
+		}
+		
+		if (launcher_entries.length > 0) {
+			launcher_entries[menu.scriptGet("selection")].scriptGet("custom_data").on_focus();
+		}
+		
+		ModuleHandler.getModule("MODLAUNCHER_Sound").scriptCall("fade_in", ["bgm", 1, null, 0.5, null]);
+		
+		new FlxTimer().start(0.25, function():Void {
+			menu.scriptSet("enabled", true);
+		});
+	}
+	
+	private function close_menu():Void {
+		if (!menu.scriptGet("enabled")) {
+			return;
+		}
+		
+		menu.scriptSet("enabled", false);
+		
+		for (i in 0 ... FlxG.state.menuItems.members.length) {
+			FlxTween.globalManager.cancelTweensOf(FlxG.state.menuItems.members[i], ["alpha"]);
+			FlxTween.globalManager.tween(FlxG.state.menuItems.members[i], {alpha: 1}, 0.25, {ease: FlxEase.cubeIn});
+		}
+		
+		FlxTween.globalManager.cancelTweensOf(logo, ["x"]);
+		FlxTween.globalManager.tween(logo, {x: 1280}, 0.25, {ease: FlxEase.expoIn});
+		
+		FlxTween.globalManager.cancelTweensOf(grid, ["alpha"]);
+		FlxTween.globalManager.tween(grid, {alpha: 0.0001}, 0.25, {ease: FlxEase.cubeIn});
+		
+		FlxTween.globalManager.cancelTweensOf(launcher_name_group, ["y"]);
+		FlxTween.globalManager.tween(launcher_name_group, {y: 1000}, 0.25, {ease: FlxEase.expoIn});
+		
+		if (menu_tween != null) {
+			menu_tween.cancel();
+			menu_tween.destroy();
+			menu_tween = null;
+		}
+		
+		menu_tween = FlxTween.num(menu_mix, 0, 0.25, {ease: FlxEase.quadInOut, onComplete: function():Void {
+			menu_tween = null;
+		}}, function(v:Float):Void {
+			menu_mix = v;
+		});
+		
+		for (i in 0 ... launcher_cameras.length) {
+			var entry_camera:FunkinCamera = launcher_cameras[i];
+			
+			FlxTween.globalManager.cancelTweensOf(entry_camera, ["x", "y"]);
+			
+			if (i == menu.scriptGet("selection")) {
+				entry_camera.setPosition(0, 360 - entry_camera.height / 2);
+				FlxTween.globalManager.tween(entry_camera, {y: 720}, 0.25, {ease: FlxEase.expoIn});
+			} else {
+				entry_camera.setPosition(0, 720);
+			}
+		}
+		
+		if (launcher_entries.length > 0) {
+			launcher_entries[menu.scriptGet("selection")].scriptGet("custom_data").on_unfocus();
+		}
+		
+		ModuleHandler.getModule("MODLAUNCHER_Sound").scriptCall("fade_out", ["bgm", 0.25, 0, null]);
+		
+		new FlxTimer().start(0.25, function():Void {
+			menu.scriptSet("frozen", true);
+			
+			FlxG.state.menuItems.enabled = true;
+		});
+	}
+	
+	private function update_text(i:Int, elapsed:Float = 0, force:Bool = false):Void {
+		if (launcher_names == null) {
+			return;
+		}
+		
+		var entry_name_wrapper:FlxTypedSpriteGroup = launcher_name_group.members[i];
+		if (entry_name_wrapper == null) {
+			return;
+		}
+		
+		var target_scale:Float = Math.max(0.1, 0.4 - 0.15 * Math.abs(menu.scriptGet("selection") - i));
+		entry_name_wrapper.scale.set(
+			force ? target_scale : MathUtil.lerp(target_scale, entry_name_wrapper.scale.x, MathUtil.exp2(-elapsed / 0.025)),
+			force ? target_scale : MathUtil.lerp(target_scale, entry_name_wrapper.scale.y, MathUtil.exp2(-elapsed / 0.025))
+		);
+		
+		var target_x:Float = 640 - 400 * (menu.scriptGet("selection") - i);
+		entry_name_wrapper.x = force ? target_x : MathUtil.lerp(target_x, entry_name_wrapper.x, MathUtil.exp2(-elapsed / 0.025));
+		
+		var target_y:Float = i == menu.scriptGet("selection") ? -20 : 20;
+		entry_name_wrapper.y = force ? launcher_name_group.y + target_y : MathUtil.lerp(launcher_name_group.y + target_y, entry_name_wrapper.y, MathUtil.exp2(-elapsed / 0.05));
+		
+		var target_alpha:Float = Math.max(0.1, 1 - 0.35 * Math.abs(menu.scriptGet("selection") - i));
+		entry_name_wrapper.alpha = force ? target_alpha : MathUtil.lerp(target_alpha, entry_name_wrapper.alpha, MathUtil.exp2(-elapsed / 0.05));
+	}
+	
+	override public function onUpdate(event:UpdateScriptEvent):Void {
+		if (!exists) {
+			return;
+		}
+		
+		if (
+			FlxG.sound.music != null &&
+			menu_tween != null
+		) {
+			FlxG.sound.music.pitch = 1 - menu_mix;
+			FlxG.sound.music.volume = 1 - menu_mix;
+		}
+		
+		if (no_mods_text != null) {
+			no_mods_text.alpha = menu_mix * 0.25;
+		}
+		
+		if (FlxG.state.leftWatermarkText != null) {
+			FlxG.state.leftWatermarkText.alpha = 1 - menu_mix;
+		}
+		
+		desaturate_shader.scriptCall("set_mix", [menu_mix]);
+		
+		if (
+			FlxG.state.menuItems != null &&
+			FlxG.state.menuItems.enabled &&
+			!FlxG.state.menuItems.busy &&
+			FlxG.state.subState == null &&
+			!menu.scriptGet("enabled") &&
+			menu_tween == null &&
+			FlxG.keys.justPressed.TAB
+		) {
+			menu.scriptCall("on_enter");
+		}
+		
+		var controls:Controls = PlayerSettings.player1.controls;
+		if (selecting) {
+			if (controls.BACK) {
+				selecting = false;
+				select_timer.cancel();
+				select_timer.destroy();
+				select_timer = null;
+				
+				ModuleHandler.getModule("MODLAUNCHER_Sound").scriptCall("fade_in", ["bgm", 1, null, 0.5, null]);
+				
+				ModuleHandler.getModule("MODLAUNCHER_Sound").scriptCall("fade_out", ["select", 0.25, 0, null]);
+				
+				var entry:Dynamic = launcher_entries[menu.scriptGet("selection")].scriptGet("custom_data");
+				entry.on_cancel(entry);
+				
+				if (select_tween != null) {
+					select_tween.cancel();
+					select_tween.destroy();
+					select_tween = null;
+				}
+				
+				FlxTween.globalManager.cancelTweensOf(overlay_bg, ["alpha"]);
+				FlxTween.globalManager.tween(overlay_bg, {alpha: 0.0001}, 0.25, {ease: FlxEase.cubeIn});
+				
+				menu.scriptSet("enabled", true);
+				menu.scriptCall("debounce", [0.2]);
+			} else if (controls.check("accept", 2)) { // JUST_PRESSED
+				selecting = false;
+				select_timer.onComplete();
+				select_timer.cancel();
+				select_timer.destroy();
+				select_timer = null;
+				
+				var entry:Dynamic = launcher_entries[menu.scriptGet("selection")].scriptGet("custom_data");
+				switch_to(entry.target);
+			}
+		}
+	}
+	
+	private function switch_to(target:String):Void {
+		for (camera in FlxG.cameras.list) {
+			camera.alpha = 0;
+		}
+		
+		FlxG.switchState(ScriptedMusicBeatState.init(target));
+		
+		destroy();
+		
+		ModuleHandler.getModule("MODLAUNCHER_Sound").scriptCall("stop_all");
+		if (FlxG.sound.music != null) {
+			FlxG.sound.music.stop();
+		}
+	}
+	
+	public function destroy():Void {
+		if (!exists) {
+			return;
+		}
+		
+		if (select_timer != null) {
+			select_timer.cancel();
+			select_timer.destroy();
+			select_timer = null;
+		}
+		
+		if (menu_tween != null) {
+			menu_tween.cancel();
+			menu_tween.destroy();
+			menu_tween = null;
+		}
+		
+		menu_mix = 0;
+		
+		desaturate_shader.scriptCall("set_mix", [0]);
+		desaturate_shader = null;
+		FlxG.camera.filters = [];
+		
+		if (FlxG.state.menuItems != null) {
+			for (i in 0 ... FlxG.state.menuItems.members.length) {
+				FlxTween.globalManager.cancelTweensOf(FlxG.state.menuItems.members[i], ["alpha"]);
+				FlxG.state.menuItems.members[i].alpha = 1;
+			}
+		}
+		
+		if (FlxG.sound.music != null) {
+			FlxG.sound.music.pitch = 1;
+			FlxG.sound.music.volume = 1;
+		}
+		
+		if (no_mods_text != null) {
+			no_mods_text.destroy();
+			no_mods_text = null;
+		}
+		
+		while (launcher_entries.length > 0) {
+			launcher_entries.pop().destroy();
+		}
+		
+		while (launcher_cameras.length > 0) {
+			FlxG.cameras.remove(launcher_cameras.pop(), true);
+		}
+		
+		FlxG.state.remove(menu);
+		menu.destroy();
+		menu = null;
+		
+		parent = null;
+		
+		ModuleHandler.getModule("MODLAUNCHER_Sound").scriptCall("stop_all");
+		
+		fixed_scrolls = false;
+		
+		exists = false;
+	}
+	
+	override public function onDestroy(event:ScriptEvent):Void {
+		destroy();
+	}
+	
+	private var fixed_scrolls:Bool = false;
+	public function fix_scrolls():Void {
+		if (fixed_scrolls || !exists) {
+			return;
+		}
+		
+		if (no_mods_text != null) {
+			no_mods_text.scrollFactor.set(0, 0);
+		}
+		
+		grid.scrollFactor.set(0.25, 0.25);
+		
+		fixed_scrolls = true;
+	}
+}
