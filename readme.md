@@ -52,7 +52,7 @@ the `Dynamic` parameter passed into the callbacks is the same as the struct you 
 |`groupUI`|`FlxTypedSpriteGroup`|ui group for your mod's banner|
 |`logo`|`FunkinSprite`|the logo of your mod, part of `groupUI`|
 
-if you modify this parameter, it will carry over into the callbacks
+if you modify or add to this parameter, it will carry over into the callbacks
 
 ---
 
@@ -90,14 +90,14 @@ class MyMod_LauncherBinding extends ScriptedModule {
 				selectSoundLength: 2.5,
 				
 				onSetup: function(data:Dynamic):Void {
-					data.cam.bgColor = 0xff808080;
+					data.camera.bgColor = 0xff808080;
 					
 					data.logo.scale.set(0.5, 0.5);
 					data.logo.updateHitbox();
 				},
 				
 				onSelect: function(data:Dynamic):Void {
-					data.cam.flash(0xffffffff, 0.5, null, true);
+					data.camera.flash(0xffffffff, 0.5, null, true);
 					
 					FlxTween.globalManager.cancelTweensOf(data.logo.scale);
 					data.logo.scale.set(0.45, 0.45);
