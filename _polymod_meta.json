@@ -10,5 +10,9 @@
 	"license": "MIT",
 	
 	"api_version": "0.5.0",
-	"mod_version": "1.0.0"
+	"mod_version": "1.1.0",
+	
+	"dependencies": {
+		"cynlib": "1.0.*"
+	}
 }

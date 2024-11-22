@@ -1,64 +1,113 @@
 import Float;
 import String;
+import StringTools;
 
 import haxe.ds.StringMap;
 
 import thx.Objects;
 import thx.Types;
 
-import funkin.modding.module.ModuleHandler;
 import funkin.modding.module.ScriptedModule;
-
-import StringTools;
-
-// see readme for documentation
 
 class MODLAUNCHER_Registry extends ScriptedModule {
 	public function new() {
-		super("MODLAUNCHER_Registry", -2147483646);
+		super("MODLAUNCHER_Registry", -2147483648);
 	}
 	
 	public var registry:StringMap<Dynamic> = new StringMap();
 	public function bind(data:Dynamic):Null<Dynamic> {
 		if (!Types.isAnonymousObject(data)) {
-			return null;
+			trace("modlauncher: data is not an object");
+			return;
 		}
 		
-		var target:Null<String> = Objects.getPath(data, "target");
-		if (target == null || !Std.isOfType(target, String) || StringTools.trim(target) == "") {
-			return null;
+		data.target = validateString(data.target);
+		if (data.target == null) {
+			trace("modlauncher: invalid target");
+			return;
 		}
 		
-		var name:Null<String> = Objects.getPath(data, "name");
-		if (name == null || !Std.isOfType(name, String) || StringTools.trim(name) == "") {
-			return null;
+		data.name = validateString(data.name);
+		if (data.name == null) {
+			trace("modlauncher: invalid name");
+			return;
 		}
 		
-		var logo_path:Null<String> = Objects.getPath(data, "logo_path");
-		if (logo_path == null || !Std.isOfType(logo_path, String)) {
-			Objects.setPath(data, "logo_path", "modlauncher/meta/icon");
+		data.logoPath = validateString(data.logoPath, "modlauncher/meta/icon");
+		
+		data.selectSoundPath = validateString(data.selectSoundPath, "confirmMenu");
+		
+		data.selectDuration = Math.max(1.5, validateFloat(data.selectDuration, 1.5));
+		
+		if (data.onSetup == null) {
+			data.onSetup = function(data:Dynamic):Void {};
 		}
 		
-		var select_sound_path:Null<String> = Objects.getPath(data, "select_sound_path");
-		if (select_sound_path == null || !Std.isOfType(select_sound_path, String) || StringTools.trim(select_sound_path) == "") {
-			select_sound_path = "confirmMenu";
+		if (data.onUpdate == null) {
+			data.onUpdate = function(data:Dynamic, elapsed:Float):Void {};
 		}
 		
-		var select_duration:Null<Float> = Objects.getPath(data, "select_duration");
-		if (select_duration == null || !Std.isOfType(select_duration, Float)) {
-			Objects.setPath(data, "select_duration", 1.5);
+		if (data.onFocus == null) {
+			data.onFocus = function(data:Dynamic):Void {};
 		}
 		
-		Objects.setPath(data, "select_duration", Math.max(1.5, select_duration));
+		if (data.onUnfocus == null) {
+			data.onUnfocus = function(data:Dynamic):Void {};
+		}
 		
-		for (func_name in ["on_setup", "on_update", "on_focus", "on_unfocus", "on_select", "on_cancel", "on_init"]) {
-			if (Objects.getPath(data, func_name) == null) {
-				Objects.setPath(data, func_name, function():Void {});
+		if (data.onSelect == null) {
+			data.onSelect = function(data:Dynamic):Void {};
+		}
+		
+		if (data.onCancel == null) {
+			data.onCancel = function(data:Dynamic):Void {};
+		}
+		
+		if (data.onInit == null) {
+			data.onInit = function(data:Dynamic):Void {};
+		}
+		
+		registry.set(data.name, data);
+		
+		return data;
+	}
+	
+	private function validateString(input:Null<String>, ?defaultTo:String):Null<String> {
+		var valid:Bool = true;
+		if (input == null || !Std.isOfType(input, String)) {
+			valid = false;
+		}
+		
+		input = StringTools.trim(StringTools.replace(input, "\n", ""));
+		if (input == "") {
+			valid = false;
+		}
+		
+		if (!valid) {
+			if (defaultTo == null) {
+				return;
+			} else {
+				input = defaultTo;
 			}
 		}
 		
-		registry.set(name, data);
+		return input;
+	}
+	
+	private function validateFloat(input:Null<Float>, ?defaultTo:Float):Null<Float> {
+		var valid:Bool = true;
+		if (input == null || !Std.isOfType(input, Float)) {
+			valid = false;
+		}
 		
-		return data;
+		if (!valid) {
+			if (defaultTo == null) {
+				return;
+			} else {
+				input = defaultTo;
+			}
+		}
+		
+		return input;
 	}
 }
