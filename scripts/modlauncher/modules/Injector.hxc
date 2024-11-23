@@ -1,5 +1,4 @@
 import flixel.FlxG;
-import flixel.FlxState;
 
 import funkin.modding.module.ModuleHandler;
 import funkin.modding.module.ScriptedModule;

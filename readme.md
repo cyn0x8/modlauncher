@@ -1,6 +1,6 @@
 # modlauncher
 
-an ingame launcher for friday night funkin mod states
+ingame launcher for fnf mod states
 
 ## overview
 
@@ -59,10 +59,10 @@ if you modify or add to this parameter, it will carry over into the callbacks
 example binding:
 
 ```haxe
-import flixel.FlxG;
 import flixel.tweens.FlxEase;
 import flixel.tweens.FlxTween;
 
+import funkin.graphics.FunkinSprite;
 import funkin.modding.module.ModuleHandler;
 import funkin.modding.module.ScriptedModule;
 
@@ -94,20 +94,28 @@ class MyMod_LauncherBinding extends ScriptedModule {
 					
 					data.logo.scale.set(0.5, 0.5);
 					data.logo.updateHitbox();
+					
+					var mySprite:FunkinSprite = new FunkinSprite().loadTexture("myMod/mySprite");
+					data.groupBG.add(mySprite);
+					data.mySprite = mySprite;
 				},
 				
 				onSelect: function(data:Dynamic):Void {
 					data.camera.flash(0xffffffff, 0.5, null, true);
 					
-					FlxTween.globalManager.cancelTweensOf(data.logo.scale);
+					FlxTween.globalManager.cancelTweensOf(data.logo.scale, ["x", "y"]);
 					data.logo.scale.set(0.45, 0.45);
 					FlxTween.tween(data.logo.scale, {x: 0.75, y: 0.75}, 1.5, {ease: FlxEase.expoOut});
 				},
 				
 				onCancel: function(data:Dynamic):Void {
-					FlxTween.globalManager.cancelTweensOf(data.logo.scale);
+					FlxTween.globalManager.cancelTweensOf(data.logo.scale, ["x", "y"]);
 					FlxTween.tween(data.logo.scale, {x: 0.5, y: 0.5}, 0.5, {ease: FlxEase.expoOut});
-				}
+				},
+				
+				onUpdate: function(data:Dynamic, elapsed:Float):Void {
+					data.mySprite.angle += 90 * elapsed;
+				},
 				
 				onInit: function(data:Dynamic):Void {
 					ModuleHandler.getModule("MyMod_Globals").scriptSet("myVariable", true);
@@ -124,5 +132,5 @@ class MyMod_LauncherBinding extends ScriptedModule {
 }
 ```
 
-> [!note]
-> bound mods do not persist through polymod reload! you must re-bind your mods using the reloader module
+> [!important]
+> bound mods do not persist through polymod reload! you must re-bind your mods using the reloader module like in the example above

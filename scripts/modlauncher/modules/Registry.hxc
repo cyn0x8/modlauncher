@@ -4,7 +4,6 @@ import StringTools;
 
 import haxe.ds.StringMap;
 
-import thx.Objects;
 import thx.Types;
 
 import funkin.modding.module.ScriptedModule;

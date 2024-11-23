@@ -1,5 +1,4 @@
-import openfl.utils.Assets;
-
+import funkin.Assets;
 import funkin.Paths;
 import funkin.modding.base.ScriptedFlxRuntimeShader;
 
