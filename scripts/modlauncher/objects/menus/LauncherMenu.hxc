@@ -61,7 +61,6 @@ class MODLAUNCHER_LauncherMenu extends ScriptedModule {
 	private var selecting:Bool = false;
 	private var selectSound:Null<FunkinSound> = null;
 	private var selectTimer:Null<FlxTimer> = null;
-	private var selectTween:Null<NumTween> = null;
 	
 	private var fontPath:String = "modlauncher/jetbrains_mono_medium.ttf";
 	
@@ -405,14 +404,13 @@ class MODLAUNCHER_LauncherMenu extends ScriptedModule {
 				desaturateShader.scriptCall("set_mix", [menuMix]);
 				
 				var controls:Controls = PlayerSettings.player1.controls;
-				if (selecting) {
+				if (selecting && selectTimer != null) {
 					if (controls.BACK) {
 						selecting = false;
-						if (selectTimer != null) {
-							selectTimer.cancel();
-							selectTimer.destroy();
-							selectTimer = null;
-						}
+						
+						selectTimer.cancel();
+						selectTimer.destroy();
+						selectTimer = null;
 						
 						music.fadeIn(1, 0, 0.5);
 						
@@ -423,12 +421,6 @@ class MODLAUNCHER_LauncherMenu extends ScriptedModule {
 						var entry:Dynamic = launcherEntries[menu.selection];
 						entry.onCancel(entry);
 						
-						if (selectTween != null) {
-							selectTween.cancel();
-							selectTween.destroy();
-							selectTween = null;
-						}
-						
 						FlxTween.globalManager.cancelTweensOf(overlayBG, ["alpha"]);
 						FlxTween.globalManager.tween(overlayBG, {alpha: 0.0001}, 0.25, {ease: FlxEase.cubeIn});
 						
@@ -436,12 +428,11 @@ class MODLAUNCHER_LauncherMenu extends ScriptedModule {
 						menu.debounce(0.2);
 					} else if (controls.check("accept", 2)) { // JUST_PRESSED
 						selecting = false;
-						if (selectTimer != null) {
-							selectTimer.onComplete();
-							selectTimer.cancel();
-							selectTimer.destroy();
-							selectTimer = null;
-						}
+						
+						selectTimer.onComplete();
+						selectTimer.cancel();
+						selectTimer.destroy();
+						selectTimer = null;
 						
 						var entry:Dynamic = launcherEntries[menu.selection];
 						entry.onInit(entry);
@@ -589,12 +580,6 @@ class MODLAUNCHER_LauncherMenu extends ScriptedModule {
 			selectTimer.cancel();
 			selectTimer.destroy();
 			selectTimer = null;
-		}
-		
-		if (selectTween != null) {
-			selectTween.cancel();
-			selectTween.destroy();
-			selectTween = null;
 		}
 		
 		if (FlxG.sound.music != null) {
