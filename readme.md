@@ -16,7 +16,7 @@ you can also cancel the selection by pressing `BACK` before the state transition
 
 ## dependencies
 
-- [cynlib 1.1.x](https://github.com/cyn0x8/cynlib/releases)
+- [cynlib 2.x](https://github.com/cyn0x8/cynlib/releases)
 
 ## screenshots
 
