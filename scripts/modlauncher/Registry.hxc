@@ -1,3 +1,5 @@
+package modlauncher;
+
 import Float;
 import String;
 import StringTools;
@@ -8,9 +10,9 @@ import thx.Types;
 
 import funkin.modding.module.ScriptedModule;
 
-class MODLAUNCHER_Registry extends ScriptedModule {
+class Registry extends ScriptedModule {
 	public function new() {
-		super("MODLAUNCHER_Registry", -2147483648);
+		super("modlauncher.Registry", -2147483648);
 	}
 	
 	public var registry:StringMap<Dynamic> = new StringMap();

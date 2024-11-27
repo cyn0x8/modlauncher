@@ -16,7 +16,7 @@ you can also cancel the selection by pressing `BACK` before the state transition
 
 ## dependencies
 
-- [cynlib 1.0.x](https://github.com/cyn0x8/cynlib/releases)
+- [cynlib 1.1.x](https://github.com/cyn0x8/cynlib/releases)
 
 ## screenshots
 
@@ -26,7 +26,7 @@ you can also cancel the selection by pressing `BACK` before the state transition
 
 ## for developers
 
-to bind your mod, you must call `bind` from the `MODLAUNCHER_Registry` module and pass in a single struct with the following fields:
+to bind your mod, you must call `bind` from the `modlauncher.Registry` module and pass in a single struct with the following fields:
 
 |field|type|description|
 |-|-|-|
@@ -59,6 +59,8 @@ if you modify or add to this parameter, it will carry over into the callbacks
 example binding:
 
 ```haxe
+package exampleMod;
+
 import flixel.tweens.FlxEase;
 import flixel.tweens.FlxTween;
 
@@ -66,9 +68,9 @@ import funkin.graphics.FunkinSprite;
 import funkin.modding.module.ModuleHandler;
 import funkin.modding.module.ScriptedModule;
 
-class MyMod_LauncherBinding extends ScriptedModule {
+class LauncherBinding extends ScriptedModule {
 	public function new() {
-		super("MyMod_LauncherBinding");
+		super("exampleMod.LauncherBinding");
 	}
 	
 	override public function onCreate(event:ScriptEvent):Void {
@@ -78,15 +80,15 @@ class MyMod_LauncherBinding extends ScriptedModule {
 	private function tryBind():Void {
 		var launcher:Null<ScriptedModule> = null;
 		
-		if ((launcher = ModuleHandler.getModule("MODLAUNCHER_Registry")) != null) {
+		if ((launcher = ModuleHandler.getModule("modlauncher.Registry")) != null) {
 			launcher.scriptCall("bind", [{
-				name: "My Mod",
+				name: "Example Mod",
 				
-				target: "MyMod_InitState",
+				target: "exampleMod.states.InitState",
 				
-				logoPath: "myMod/logo",
+				logoPath: "exampleMod/logo",
 				
-				selectSoundPath: "myMod/launcherSelectSound",
+				selectSoundPath: "exampleMod/launcherSelectSound",
 				selectSoundLength: 2.5,
 				
 				onSetup: function(data:Dynamic):Void {
@@ -95,7 +97,7 @@ class MyMod_LauncherBinding extends ScriptedModule {
 					data.logo.scale.set(0.5, 0.5);
 					data.logo.updateHitbox();
 					
-					var mySprite:FunkinSprite = new FunkinSprite().loadTexture("myMod/mySprite");
+					var mySprite:FunkinSprite = new FunkinSprite().loadTexture("exampleMod/mySprite");
 					data.groupBG.add(mySprite);
 					data.mySprite = mySprite;
 				},
@@ -118,14 +120,14 @@ class MyMod_LauncherBinding extends ScriptedModule {
 				},
 				
 				onInit: function(data:Dynamic):Void {
-					ModuleHandler.getModule("MyMod_Globals").scriptSet("myVariable", true);
+					ModuleHandler.getModule("exampleMod.Globals").scriptSet("myVariable", true);
 				}
 			}]);
 		}
 		
-		// bind to other fnf mod launchers/managers maybe? up to you
+		// bind to other fnf mod launchers maybe? up to you
 		
-		ModuleHandler.getModule("CL_Reloader").scriptGet("reloadPre").set("MyMod_LauncherBinding", {
+		ModuleHandler.getModule("cynlib.reloader.Reloader").scriptGet("reloadPre").set("exampleMod.LauncherBinding", {
 			callback: "tryBind"
 		});
 	}

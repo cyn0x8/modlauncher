@@ -1,12 +1,14 @@
+package modlauncher;
+
 import flixel.FlxG;
 
 import funkin.modding.module.ModuleHandler;
 import funkin.modding.module.ScriptedModule;
 import funkin.ui.mainmenu.MainMenuState;
 
-class MODLAUNCHER_Injector extends ScriptedModule {
+class Injector extends ScriptedModule {
 	public function new() {
-		super("MODLAUNCHER_Injector", 2147483647);
+		super("modlauncher.Injector", 2147483647);
 	}
 	
 	override public function onStateChangeEnd(event:StateChangeScriptEvent):Void {
@@ -25,7 +27,7 @@ class MODLAUNCHER_Injector extends ScriptedModule {
 			return;
 		}
 		
-		ModuleHandler.getModule("MODLAUNCHER_LauncherMenu").scriptCall("setup");
+		ModuleHandler.getModule("modlauncher.menus.LauncherMenu").scriptCall("setup");
 		
 		injected = true;
 	}
@@ -35,7 +37,7 @@ class MODLAUNCHER_Injector extends ScriptedModule {
 			return;
 		}
 		
-		ModuleHandler.getModule("MODLAUNCHER_LauncherMenu").scriptCall("destroy");
+		ModuleHandler.getModule("modlauncher.menus.LauncherMenu").scriptCall("destroy");
 		
 		injected = false;
 	}

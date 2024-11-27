@@ -1,8 +1,10 @@
+package modlauncher.shaders;
+
 import funkin.Assets;
 import funkin.Paths;
 import funkin.modding.base.ScriptedFlxRuntimeShader;
 
-class MODLAUNCHER_DesaturateShader extends ScriptedFlxRuntimeShader {
+class DesaturateShader extends ScriptedFlxRuntimeShader {
 	public function new() {
 		super(Assets.getText(Paths.frag("modlauncher/desaturate")));
 		

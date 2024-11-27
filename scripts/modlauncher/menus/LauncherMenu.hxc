@@ -1,3 +1,5 @@
+package modlauncher.menus;
+
 import haxe.ds.StringMap;
 
 import openfl.filters.ShaderFilter;
@@ -24,9 +26,9 @@ import funkin.modding.module.ModuleHandler;
 import funkin.modding.module.ScriptedModule;
 import funkin.util.MathUtil;
 
-class MODLAUNCHER_LauncherMenu extends ScriptedModule {
+class LauncherMenu extends ScriptedModule {
 	public function new() {
-		super("MODLAUNCHER_LauncherMenu");
+		super("modlauncher.menus.LauncherMenu");
 	}
 	
 	private var exists:Bool = false;
@@ -94,7 +96,7 @@ class MODLAUNCHER_LauncherMenu extends ScriptedModule {
 		overlayBG.alpha = 0.0001;
 		groupBG.add(overlayBG);
 		
-		var registry:StringMap<Dynamic> = ModuleHandler.getModule("MODLAUNCHER_Registry").scriptGet("registry");
+		var registry:StringMap<Dynamic> = ModuleHandler.getModule("modlauncher.Registry").scriptGet("registry");
 		if (registry.iterator().hasNext()) {
 			for (entry in registry) {
 				launcherEntries.push(entry);
@@ -129,7 +131,7 @@ class MODLAUNCHER_LauncherMenu extends ScriptedModule {
 				entryLogo.updateHitbox();
 				entryLogo.setPosition(640 - entryLogo.width / 2, entryCamera.height / 2 - entryLogo.height / 2);
 				
-				var entryItem:Dynamic = ModuleHandler.getModule("CL_MenuItem").scriptCall("new_MenuItem", [{
+				var entryItem:Dynamic = ModuleHandler.getModule("cynlib.menu.MenuItem").scriptCall("new_MenuItem", [{
 					data: entry,
 					
 					onFocus: function(prevItem:Dynamic):Void {
@@ -254,7 +256,7 @@ class MODLAUNCHER_LauncherMenu extends ScriptedModule {
 		
 		FlxG.cameras.add(camUI, false);
 		
-		desaturateShader = ScriptedFlxRuntimeShader.init("MODLAUNCHER_DesaturateShader");
+		desaturateShader = ScriptedFlxRuntimeShader.init("modlauncher.shaders.DesaturateShader");
 		desaturateShader.scriptCall("set_mix", [menuMix]);
 		FlxG.camera.filters = [
 			new ShaderFilter(desaturateShader)
@@ -262,7 +264,7 @@ class MODLAUNCHER_LauncherMenu extends ScriptedModule {
 		
 		music = FunkinSound.load(Paths.music("chartEditorLoop/chartEditorLoop"), 0, true, true, true);
 		
-		menu = ModuleHandler.getModule("CL_Menu").scriptCall("new_Menu", [{
+		menu = ModuleHandler.getModule("cynlib.menu.Menu").scriptCall("new_Menu", [{
 			items: menuItems,
 			autoEnable: true,
 			
@@ -464,18 +466,18 @@ class MODLAUNCHER_LauncherMenu extends ScriptedModule {
 		
 		var targetScale:Float = Math.max(0.1, 0.4 - 0.15 * Math.abs(menu.selection - i));
 		entryText.scale.set(
-			force ? targetScale : MathUtil.lerp(targetScale, entryText.scale.x, MathUtil.exp2(-elapsed / 0.025)),
-			force ? targetScale : MathUtil.lerp(targetScale, entryText.scale.y, MathUtil.exp2(-elapsed / 0.025))
+			force ? targetScale : ModuleHandler.getModule("cynlib.util.MathUtil").scriptCall("smoothLerpDecay", [entryText.scale.x, targetScale, elapsed, 0.025]),
+			force ? targetScale : ModuleHandler.getModule("cynlib.util.MathUtil").scriptCall("smoothLerpDecay", [entryText.scale.y, targetScale, elapsed, 0.025])
 		);
 		
 		var targetX:Float = 640 - 400 * (menu.selection - i);
-		entryText.x = force ? targetX : MathUtil.lerp(targetX, entryText.x, MathUtil.exp2(-elapsed / 0.025));
+		entryText.x = force ? targetX : ModuleHandler.getModule("cynlib.util.MathUtil").scriptCall("smoothLerpDecay", [entryText.x, targetX, elapsed, 0.025]);
 		
 		var targety:Float = i == menu.selection ? -20 : 20;
-		entryText.y = force ? launcherNames.y + targety : MathUtil.lerp(launcherNames.y + targety, entryText.y, MathUtil.exp2(-elapsed / 0.05));
+		entryText.y = force ? launcherNames.y + targety : ModuleHandler.getModule("cynlib.util.MathUtil").scriptCall("smoothLerpDecay", [entryText.y, launcherNames.y + targety, elapsed, 0.05]);
 		
 		var targetAlpha:Float = Math.max(0.1, 1 - 0.35 * Math.abs(menu.selection - i));
-		entryText.alpha = force ? targetAlpha : MathUtil.lerp(targetAlpha, entryText.alpha, MathUtil.exp2(-elapsed / 0.05));
+		entryText.alpha = force ? targetAlpha : ModuleHandler.getModule("cynlib.util.MathUtil").scriptCall("smoothLerpDecay", [entryText.alpha, targetAlpha, elapsed, 0.05]);
 	}
 	
 	override public function onUpdate(event:UpdateScriptEvent):Void {
