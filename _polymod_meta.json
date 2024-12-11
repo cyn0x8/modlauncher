@@ -10,9 +10,9 @@
 	"license": "MIT",
 	
 	"api_version": "0.5.0",
-	"mod_version": "3.0.0",
+	"mod_version": "3.0.1",
 	
 	"dependencies": {
-		"cynlib": "2.*"
+		"cynlib": "2.* || 3.*"
 	}
 }
