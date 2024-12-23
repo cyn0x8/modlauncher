@@ -1,1 +1,16 @@
+* text=auto eol=lf
+
+.gitattributes text
+.gitignore text
+
+*.txt text
+*.md text
+
+*.hxc text
+*.frag text
+*.json text
+
+*.png binary
+*.ttf binary
+
 *.hxc linguist-language=Haxe
