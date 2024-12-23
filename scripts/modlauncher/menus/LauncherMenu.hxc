@@ -12,7 +12,6 @@ import flixel.text.FlxText;
 import flixel.tweens.FlxEase;
 import flixel.tweens.FlxTween;
 import flixel.tweens.misc.NumTween;
-import flixel.util.FlxTimer;
 
 import funkin.Paths;
 import funkin.PlayerSettings;
@@ -62,7 +61,7 @@ class LauncherMenu extends ScriptedModule {
 	
 	private var selecting:Bool = false;
 	private var selectSound:Null<FunkinSound> = null;
-	private var selectTimer:Null<FlxTimer> = null;
+	private var selectSequence:Null<Dynamic> = null;
 	
 	private var fontPath:String = "modlauncher/jetbrains_mono_medium.ttf";
 	
@@ -165,27 +164,31 @@ class LauncherMenu extends ScriptedModule {
 					onPress: function():Void {
 						menu.enabled = false;
 						
-						new FlxTimer().start(0.1, function():Void {
-							selecting = true;
-						});
+						ModuleHandler.getModule("cynlib.sequence.Sequence").scriptCall("new_Sequence", [[
+							{time: 0.1, callback: function():Void {
+								selecting = true;
+							}}
+						]]);
 						
 						FlxTween.globalManager.cancelTweensOf(overlayBG, ["alpha"]);
 						FlxTween.globalManager.tween(overlayBG, {alpha: 1}, 0.1, {ease: FlxEase.cubeOut});
 						
-						selectTimer = new FlxTimer().start(entry.selectDuration - 0.5, function():Void {
-							selecting = false;
+						selectSequence = ModuleHandler.getModule("cynlib.sequence.Sequence").scriptCall("new_Sequence", [[
+							{time: entry.selectDuration - 0.5, callback: function():Void {
+								selecting = false;
+								
+								FlxTween.globalManager.cancelTweensOf(overlayUI, ["alpha"]);
+								FlxTween.globalManager.tween(overlayUI, {alpha: 1}, 0.5, {ease: FlxEase.cubeInOut});
+								
+								selectSound.fadeOut(0.5);
+							}},
 							
-							FlxTween.globalManager.cancelTweensOf(overlayUI, ["alpha"]);
-							FlxTween.globalManager.tween(overlayUI, {alpha: 1}, 0.5, {ease: FlxEase.cubeInOut});
-							
-							selectSound.fadeOut(0.5);
-							
-							new FlxTimer().start(0.5, function():Void {
+							{time: entry.selectDuration, callback: function():Void {
 								entry.onInit(entry);
 								
 								switchTo(entry.target);
-							});
-						});
+							}}
+						]]);
 						
 						if (selectSound != null) {
 							selectSound.destroy();
@@ -324,9 +327,11 @@ class LauncherMenu extends ScriptedModule {
 				
 				music.fadeIn(1, 0, 0.5);
 				
-				new FlxTimer().start(0.25, function():Void {
-					menu.enabled = true;
-				});
+				ModuleHandler.getModule("cynlib.sequence.Sequence").scriptCall("new_Sequence", [[
+					{time: 0.25, callback: function():Void {
+						menu.enabled = true;
+					}}
+				]]);
 			},
 			
 			onBack: function():Void {
@@ -382,11 +387,13 @@ class LauncherMenu extends ScriptedModule {
 				
 				music.fadeOut(0.25);
 				
-				new FlxTimer().start(0.25, function():Void {
-					menu.frozen = true;
-					
-					FlxG.state.menuItems.enabled = true;
-				});
+				ModuleHandler.getModule("cynlib.sequence.Sequence").scriptCall("new_Sequence", [[
+					{time: 0.25, callback: function():Void {
+						menu.frozen = true;
+						
+						FlxG.state.menuItems.enabled = true;
+					}}
+				]]);
 			},
 			
 			onUpdate: function(elapsed:Float):Void {
@@ -406,13 +413,12 @@ class LauncherMenu extends ScriptedModule {
 				desaturateShader.scriptCall("set_mix", [menuMix]);
 				
 				var controls:Controls = PlayerSettings.player1.controls;
-				if (selecting && selectTimer != null) {
+				if (selecting && selectSequence != null) {
 					if (controls.BACK) {
 						selecting = false;
 						
-						selectTimer.cancel();
-						selectTimer.destroy();
-						selectTimer = null;
+						selectSequence.destroy();
+						selectSequence = null;
 						
 						music.fadeIn(1, 0, 0.5);
 						
@@ -431,10 +437,8 @@ class LauncherMenu extends ScriptedModule {
 					} else if (controls.check("accept", 2)) { // JUST_PRESSED
 						selecting = false;
 						
-						selectTimer.onComplete();
-						selectTimer.cancel();
-						selectTimer.destroy();
-						selectTimer = null;
+						selectSequence.destroy();
+						selectSequence = null;
 						
 						var entry:Dynamic = launcherEntries[menu.selection];
 						entry.onInit(entry);
@@ -578,10 +582,9 @@ class LauncherMenu extends ScriptedModule {
 			selectSound = null;
 		}
 		
-		if (selectTimer != null) {
-			selectTimer.cancel();
-			selectTimer.destroy();
-			selectTimer = null;
+		if (selectSequence != null) {
+			selectSequence.destroy();
+			selectSequence = null;
 		}
 		
 		if (FlxG.sound.music != null) {
