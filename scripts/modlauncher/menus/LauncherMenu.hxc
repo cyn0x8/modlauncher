@@ -573,7 +573,7 @@ class LauncherMenu extends ScriptedModule {
 		
 		desaturateShader.scriptCall("set_mix", [0]);
 		desaturateShader = null;
-		FlxG.camera.filters = [];
+		FlxG.camera.filters = new Array();
 		
 		selecting = false;
 		
