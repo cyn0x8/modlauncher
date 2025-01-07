@@ -14,9 +14,9 @@ When in the main menu, press `TAB` to open the launcher UI and your `BACK` key t
 
 ## Screenshots
 
-![no mods example](./images/modlauncher/meta/examples/none.png)
+![no mods example](https://files.catbox.moe/tyjs1m.png)
 
-![bound mods example](./images/modlauncher/meta/examples/bound.png)
+![bound mods example](https://files.catbox.moe/e74ibx.png)
 
 ## For developers
 
