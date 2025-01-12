@@ -4,6 +4,7 @@
 
 - Retroactively improved GitHub changelog.
 - Updated `cynlib` dependency to [v2.x-4.x](https://github.com/cyn0x8/cynlib/releases).
+- Removed unnecessary code.
 
 ## v3.0.2
 
