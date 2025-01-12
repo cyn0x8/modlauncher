@@ -57,7 +57,7 @@ class LauncherMenu extends ScriptedModule {
 	
 	private var menuMix:Float = 0;
 	private var menuTween:Null<NumTween> = null;
-	private var desaturateShader:ScriptedFlxRuntimeShader = null;
+	private var saturationShader:ScriptedFlxRuntimeShader = null;
 	
 	private var selecting:Bool = false;
 	private var selectSound:Null<FunkinSound> = null;
@@ -259,10 +259,9 @@ class LauncherMenu extends ScriptedModule {
 		
 		FlxG.cameras.add(camUI, false);
 		
-		desaturateShader = ScriptedFlxRuntimeShader.init("modlauncher.shaders.DesaturateShader");
-		desaturateShader.scriptCall("set_mix", [menuMix]);
+		saturationShader = ScriptedFlxRuntimeShader.init("cynlib.shaders.SaturationShader");
 		FlxG.camera.filters = [
-			new ShaderFilter(desaturateShader)
+			new ShaderFilter(saturationShader)
 		];
 		
 		music = FunkinSound.load(Paths.music("chartEditorLoop/chartEditorLoop"), 0, true, true, true);
@@ -410,7 +409,7 @@ class LauncherMenu extends ScriptedModule {
 					noModsText.alpha = menuMix * 0.25;
 				}
 				
-				desaturateShader.scriptCall("set_mix", [menuMix]);
+				saturationShader.scriptCall("set_saturation", [1 - menuMix]);
 				
 				var controls:Controls = PlayerSettings.player1.controls;
 				if (selecting && selectSequence != null) {
@@ -571,8 +570,8 @@ class LauncherMenu extends ScriptedModule {
 			menuTween = null;
 		}
 		
-		desaturateShader.scriptCall("set_mix", [0]);
-		desaturateShader = null;
+		saturationShader.scriptCall("set_saturation", [0]);
+		saturationShader = null;
 		FlxG.camera.filters = new Array();
 		
 		selecting = false;
