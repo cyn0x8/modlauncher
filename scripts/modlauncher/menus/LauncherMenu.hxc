@@ -259,7 +259,7 @@ class LauncherMenu extends ScriptedModule {
 		
 		FlxG.cameras.add(camUI, false);
 		
-		saturationShader = ScriptedFlxRuntimeShader.init("cynlib.shaders.SaturationShader");
+		saturationShader = ScriptedFlxRuntimeShader.init("cynlib.shader.shaders.SaturationShader");
 		FlxG.camera.filters = [
 			new ShaderFilter(saturationShader)
 		];
