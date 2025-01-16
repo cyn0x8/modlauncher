@@ -70,14 +70,35 @@ class LauncherBinding extends ScriptedModule {
 	}
 	
 	override public function onCreate(event:ScriptEvent):Void {
-		tryBind();
+		active = false;
+		
+		tryBindModlauncher();
+		// Bind to other FNF mod launchers as well? Up to you...
+		
+		hook();
 	}
 	
-	private function tryBind():Void {
-		var launcher:Null<ScriptedModule> = null;
+	private function hook():Void {
+		ModuleHandler.getModule("cynlib.reloader.Reloader").scriptGet("reloadPre").set("exampleMod.LauncherBinding", {
+			callback: "onReload"
+		});
+	}
+	
+	public function onReload():Void {
+		tryBindModlauncher();
+		// Bind to other FNF mod launchers as well? Up to you...
 		
-		if ((launcher = ModuleHandler.getModule("modlauncher.Registry")) != null) {
-			launcher.scriptCall("bind", [{
+		hook();
+	}
+	
+	private var bound:Bool = false; 
+	public function tryBindModlauncher():Void {
+		if (bound) {
+			return;
+		}
+		
+		if (ModuleHandler.getModule("modlauncher.Registry") != null) {
+			ModuleHandler.getModule("modlauncher.Registry").scriptCall("bind", [{
 				name: "Example Mod",
 				
 				target: "exampleMod.states.InitState",
@@ -119,13 +140,9 @@ class LauncherBinding extends ScriptedModule {
 					ModuleHandler.getModule("exampleMod.Globals").scriptSet("myVariable", true);
 				}
 			}]);
+			
+			bound = true;
 		}
-		
-		// Bind to other FNF mod launchers as well? Up to you...
-		
-		ModuleHandler.getModule("cynlib.reloader.Reloader").scriptGet("reloadPre").set("exampleMod.LauncherBinding", {
-			callback: "tryBind"
-		});
 	}
 }
 ```

@@ -141,16 +141,37 @@ typedef LauncherData = {
  *     public function new() {
  *         super("exampleMod.LauncherBinding");
  *     }
- * 
+ *     
  *     override public function onCreate(event:ScriptEvent):Void {
- *         tryBind();
- *     }
- * 
- *     private function tryBind():Void {
- *         var launcher:Null<ScriptedModule> = null;
+ *         active = false;
  *         
- *         if ((launcher = ModuleHandler.getModule("modlauncher.Registry")) != null) {
- *             launcher.scriptCall("bind", [{
+ *         tryBindModlauncher();
+ *         // Bind to other FNF mod launchers as well? Up to you...
+ *         
+ *         hook();
+ *     }
+ *     
+ *     private function hook():Void {
+ *         ModuleHandler.getModule("cynlib.reloader.Reloader").scriptGet("reloadPre").set("exampleMod.LauncherBinding", {
+ *             callback: "onReload"
+ *         });
+ *     }
+ *     
+ *     public function onReload():Void {
+ *         tryBindModlauncher();
+ *         // Bind to other FNF mod launchers as well? Up to you...
+ *         
+ *         hook();
+ *     }
+ *     
+ *     private var bound:Bool = false; 
+ *     public function tryBindModlauncher():Void {
+ *         if (bound) {
+ *             return;
+ *         }
+ *         
+ *         if (ModuleHandler.getModule("modlauncher.Registry") != null) {
+ *             ModuleHandler.getModule("modlauncher.Registry").scriptCall("bind", [{
  *                 name: "Example Mod",
  *                 
  *                 target: "exampleMod.states.InitState",
@@ -192,13 +213,9 @@ typedef LauncherData = {
  *                     ModuleHandler.getModule("exampleMod.Globals").scriptSet("myVariable", true);
  *                 }
  *             }]);
+ *             
+ *             bound = true;
  *         }
- *         
- *         // Bind to other FNF mod launchers as well? Up to you...
- *         
- *         ModuleHandler.getModule("cynlib.reloader.Reloader").scriptGet("reloadPre").set("exampleMod.LauncherBinding", {
- *             callback: "tryBind"
- *         });
  *     }
  * }
  * ```
@@ -217,23 +234,24 @@ class Registry extends ScriptedModule {
 	 * Bind your mod to the launcher.
 	 * 
 	 * @param data The `LauncherData` to use for your mod.
-	 * @return The validated data you passed in, otherwise `null` if invalid.
+	 * @return The validated data you passed in, or existing data if your mod is already bound, or `null` if the data is invalid.
 	 */
 	public function bind(data:LauncherData):Null<LauncherData> {
 		if (!Types.isAnonymousObject(data)) {
-			trace("modlauncher: data is not an object");
-			return;
-		}
-		
-		data.target = validateString(data.target);
-		if (data.target == null) {
-			trace("modlauncher: invalid target");
 			return;
 		}
 		
 		data.name = validateString(data.name);
 		if (data.name == null) {
-			trace("modlauncher: invalid name");
+			return;
+		}
+		
+		if (registry.exists(data.name)) {
+			return registry.get(data.name);
+		}
+		
+		data.target = validateString(data.target);
+		if (data.target == null) {
 			return;
 		}
 		
@@ -272,6 +290,8 @@ class Registry extends ScriptedModule {
 		}
 		
 		registry.set(data.name, data);
+		
+		trace("modlauncher: Bound mod \"" + data.name + "\".");
 		
 		return data;
 	}
