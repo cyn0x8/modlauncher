@@ -43,10 +43,10 @@ The `LauncherData` parameter passed into the callbacks is the same as the struct
 
 |Field|Type|Description|
 |-|-|-|
-|`camera`|`FunkinCamera`|The camera of your mod's banner in the launcher.|
+|`camera`|`FunkinCamera`|The camera of your mod's banner in the launcher.<br>The size you have to work with is 1280x450.|
 |`groupBG`|`FlxTypedSpriteGroup`|The background group of your mod's banner.|
 |`groupUI`|`FlxTypedSpriteGroup`|The UI group of your mod's banner.|
-|`logo`|`FunkinSprite`|The logo sprite of your mod's banner, part of `groupUI`.|
+|`logo`|`FunkinSprite`|The logo sprite of your mod's banner, part of `groupUI`.<br>Initially auto-resized to 350px height.|
 
 So, if you add to this struct in one of your callbacks, it will carry over into the other callbacks.
 

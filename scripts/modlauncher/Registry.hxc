@@ -96,6 +96,7 @@ typedef LauncherData = {
 	
 	/**
 	 * The camera of your mod's banner in the launcher.
+	 * The size you have to work with is 1280x450.
 	 * 
 	 * Only available in the callback functions.
 	 */
@@ -117,6 +118,7 @@ typedef LauncherData = {
 	
 	/**
 	 * The logo sprite of your mod's banner, part of `groupUI`.
+	 * Initially auto-resized to 350px height.
 	 * 
 	 * Only available in the callback functions.
 	 */
