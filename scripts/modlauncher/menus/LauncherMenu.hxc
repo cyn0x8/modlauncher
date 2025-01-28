@@ -130,7 +130,7 @@ class LauncherMenu extends ScriptedModule {
 				entryLogo.updateHitbox();
 				entryLogo.setPosition(640 - entryLogo.width / 2, entryCamera.height / 2 - entryLogo.height / 2);
 				
-				var entryItem:Dynamic = ModuleHandler.getModule("cynlib.menu.MenuItem").scriptCall("new_MenuItem", [{
+				var entryItem:Dynamic = ModuleHandler.getModule("be.menu.MenuItem").scriptCall("new_MenuItem", [{
 					data: entry,
 					
 					onFocus: function(prevItem:Dynamic):Void {
@@ -164,7 +164,7 @@ class LauncherMenu extends ScriptedModule {
 					onPress: function():Void {
 						menu.enabled = false;
 						
-						ModuleHandler.getModule("cynlib.sequence.Sequence").scriptCall("new_Sequence", [[
+						ModuleHandler.getModule("be.sequence.Sequence").scriptCall("new_Sequence", [[
 							{time: 0.1, callback: function():Void {
 								selecting = true;
 							}}
@@ -173,7 +173,7 @@ class LauncherMenu extends ScriptedModule {
 						FlxTween.globalManager.cancelTweensOf(overlayBG, ["alpha"]);
 						FlxTween.globalManager.tween(overlayBG, {alpha: 1}, 0.1, {ease: FlxEase.cubeOut});
 						
-						selectSequence = ModuleHandler.getModule("cynlib.sequence.Sequence").scriptCall("new_Sequence", [[
+						selectSequence = ModuleHandler.getModule("be.sequence.Sequence").scriptCall("new_Sequence", [[
 							{time: entry.selectDuration - 0.5, callback: function():Void {
 								selecting = false;
 								
@@ -259,14 +259,14 @@ class LauncherMenu extends ScriptedModule {
 		
 		FlxG.cameras.add(camUI, false);
 		
-		saturationShader = ScriptedFlxRuntimeShader.init("cynlib.shader.shaders.SaturationShader");
+		saturationShader = ScriptedFlxRuntimeShader.init("be.shader.shaders.SaturationShader");
 		FlxG.camera.filters = [
 			new ShaderFilter(saturationShader)
 		];
 		
 		music = FunkinSound.load(Paths.music("chartEditorLoop/chartEditorLoop"), 0, true, true, true);
 		
-		menu = ModuleHandler.getModule("cynlib.menu.Menu").scriptCall("new_Menu", [{
+		menu = ModuleHandler.getModule("be.menu.Menu").scriptCall("new_Menu", [{
 			items: menuItems,
 			autoEnable: true,
 			
@@ -326,7 +326,7 @@ class LauncherMenu extends ScriptedModule {
 				
 				music.fadeIn(1, 0, 0.5);
 				
-				ModuleHandler.getModule("cynlib.sequence.Sequence").scriptCall("new_Sequence", [[
+				ModuleHandler.getModule("be.sequence.Sequence").scriptCall("new_Sequence", [[
 					{time: 0.25, callback: function():Void {
 						menu.enabled = true;
 					}}
@@ -386,7 +386,7 @@ class LauncherMenu extends ScriptedModule {
 				
 				music.fadeOut(0.25);
 				
-				ModuleHandler.getModule("cynlib.sequence.Sequence").scriptCall("new_Sequence", [[
+				ModuleHandler.getModule("be.sequence.Sequence").scriptCall("new_Sequence", [[
 					{time: 0.25, callback: function():Void {
 						menu.frozen = true;
 						
@@ -469,18 +469,18 @@ class LauncherMenu extends ScriptedModule {
 		
 		var targetScale:Float = Math.max(0.1, 0.4 - 0.15 * Math.abs(menu.selection - i));
 		entryText.scale.set(
-			force ? targetScale : ModuleHandler.getModule("cynlib.util.MathUtil").scriptCall("smoothLerpDecay", [entryText.scale.x, targetScale, elapsed, 0.025]),
-			force ? targetScale : ModuleHandler.getModule("cynlib.util.MathUtil").scriptCall("smoothLerpDecay", [entryText.scale.y, targetScale, elapsed, 0.025])
+			force ? targetScale : ModuleHandler.getModule("be.util.MathUtil").scriptCall("smoothLerpDecay", [entryText.scale.x, targetScale, elapsed, 0.025]),
+			force ? targetScale : ModuleHandler.getModule("be.util.MathUtil").scriptCall("smoothLerpDecay", [entryText.scale.y, targetScale, elapsed, 0.025])
 		);
 		
 		var targetX:Float = 640 - 400 * (menu.selection - i);
-		entryText.x = force ? targetX : ModuleHandler.getModule("cynlib.util.MathUtil").scriptCall("smoothLerpDecay", [entryText.x, targetX, elapsed, 0.025]);
+		entryText.x = force ? targetX : ModuleHandler.getModule("be.util.MathUtil").scriptCall("smoothLerpDecay", [entryText.x, targetX, elapsed, 0.025]);
 		
 		var targety:Float = i == menu.selection ? -20 : 20;
-		entryText.y = force ? launcherNames.y + targety : ModuleHandler.getModule("cynlib.util.MathUtil").scriptCall("smoothLerpDecay", [entryText.y, launcherNames.y + targety, elapsed, 0.05]);
+		entryText.y = force ? launcherNames.y + targety : ModuleHandler.getModule("be.util.MathUtil").scriptCall("smoothLerpDecay", [entryText.y, launcherNames.y + targety, elapsed, 0.05]);
 		
 		var targetAlpha:Float = Math.max(0.1, 1 - 0.35 * Math.abs(menu.selection - i));
-		entryText.alpha = force ? targetAlpha : ModuleHandler.getModule("cynlib.util.MathUtil").scriptCall("smoothLerpDecay", [entryText.alpha, targetAlpha, elapsed, 0.05]);
+		entryText.alpha = force ? targetAlpha : ModuleHandler.getModule("be.util.MathUtil").scriptCall("smoothLerpDecay", [entryText.alpha, targetAlpha, elapsed, 0.05]);
 	}
 	
 	override public function onUpdate(event:UpdateScriptEvent):Void {

@@ -10,7 +10,7 @@ When in the main menu, press `TAB` to open the launcher UI and your `BACK` key t
 
 ## Dependencies
 
-- [cynlib (2.x-3.x)](https://github.com/cyn0x8/cynlib/releases)
+- [`beast-engine` v1.x](https://github.com/rizz-residence/beast-engine/releases)
 
 ## Screenshots
 
@@ -79,7 +79,7 @@ class LauncherBinding extends ScriptedModule {
 	}
 	
 	private function hook():Void {
-		ModuleHandler.getModule("cynlib.reloader.Reloader").scriptGet("reloadPre").set("exampleMod.LauncherBinding", {
+		ModuleHandler.getModule("be.reloader.Reloader").scriptGet("reloadPre").set("exampleMod.LauncherBinding", {
 			callback: "onReload"
 		});
 	}
@@ -148,4 +148,4 @@ class LauncherBinding extends ScriptedModule {
 ```
 
 > [!important]
-> Bound mods do not persist through polymod reload! You must re-bind your mods using the `cynlib.reloader.Reloader` module like in the example above.
+> Bound mods do not persist through polymod reload! You must re-bind your mods using the `be.reloader.Reloader` module like in the example above.

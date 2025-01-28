@@ -10,9 +10,9 @@
 	"license": "MIT",
 	
 	"api_version": "0.5.0",
-	"mod_version": "3.0.3",
+	"mod_version": "4.0.0-dev",
 	
 	"dependencies": {
-		"cynlib": ">=2.0.0 <5.0.0"
+		"beast-engine": "1.0.0-dev"
 	}
 }

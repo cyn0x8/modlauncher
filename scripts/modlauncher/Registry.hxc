@@ -154,7 +154,7 @@ typedef LauncherData = {
  *     }
  *     
  *     private function hook():Void {
- *         ModuleHandler.getModule("cynlib.reloader.Reloader").scriptGet("reloadPre").set("exampleMod.LauncherBinding", {
+ *         ModuleHandler.getModule("be.reloader.Reloader").scriptGet("reloadPre").set("exampleMod.LauncherBinding", {
  *             callback: "onReload"
  *         });
  *     }
