@@ -6,7 +6,7 @@ ingame launcher for fnf mod states
 
 Just drag `modlauncher.zip` into your mods folder and you're good to go!
 
-When in the main menu, press `TAB` to open the launcher UI and your `BACK` key to close it. While it's open, you'll see banners of any mods that have bound to the launcher. You can navigate between them with your `UI_LEFT` and `UI_RIGHT` keys, and press your `ACCEPT` key to "launch" the selected mod. You can also cancel the selection by pressing `BACK` before the state transition starts.
+When in the main menu, press `TAB` to open the launcher's grid view, and then use your UI keys to navigate and select a mod to open.
 
 ## Dependencies
 
@@ -32,9 +32,9 @@ To bind your mod, you must call `bind` from the `modlauncher.Registry` module an
 |`selectSoundPath`|`Null<String>`|The path to your mod's select sound (will be passed into `Paths.sound`).<br>Defaults to `"confirmMenu"`.|
 |`selectDuration`|`Null<Float>`|The time in seconds from when the player selcts your mod to the end of the state transition, minimum `1.5`.<br>The selection is cancellable until `0.5` seconds before this duration (when the state transition starts).<br>Defaults to `1.5`.|
 |`onSetup`|`Null<(LauncherData)->Void>`|Callback to run when modlauncher is injected into the main menu.<br>Useful for setting up your mod banner in the launcher.|
-|`onUpdate`|`Null<(LauncherData, Float)->Void>`|Callback to run every frame while the launcher is open.<br>Useful for animating your banner<br>The 2nd parameter is delta-time in seconds.|
+|`onUpdate`|`Null<(LauncherData, Float)->Void>`|Callback to run every frame while the launcher is open and the banner camera is visible.<br>Useful for animating your banner<br>The 2nd parameter is delta-time in seconds.|
 |`onFocus`|`Null<(LauncherData)->Void>`|Callback to run when your mod is "focused" on.|
-|`onUnfocus`|`Null<(LauncherData)->Void>`|Callback to run when another mod is focused on away from yours.|
+|`onUnfocus`|`Null<(LauncherData)->Void>`|Callback to run when another mod is focused on away from yours.<br>Useful for stopping your banner animation and resetting values.|
 |`onSelect`|`Null<(LauncherData)->Void>`|Callback to run when your mod is initially selected, before the state transition starts.|
 |`onCancel`|`Null<(LauncherData)->Void>`|Callback to run when your mod selection is cancelled before the state transition starts.|
 |`onInit`|`Null<(LauncherData)->Void>`|Callback to run after your mod is selected, and right before your target state is initialized.<br>Useful for "initializing" your mod if you're not using an initialization state (I recommend the latter, though).|
@@ -43,7 +43,7 @@ The `LauncherData` parameter passed into the callbacks is the same as the struct
 
 |Field|Type|Description|
 |-|-|-|
-|`camera`|`FunkinCamera`|The camera of your mod's banner in the launcher.<br>The size you have to work with is 1280x450.|
+|`camera`|`FunkinCamera`|The camera of your mod's banner in the launcher.<br>The size you have to work with is 1280x450.<br>Useful for setting the background color, adding shaders, etc.|
 |`groupBG`|`FlxTypedSpriteGroup`|The background group of your mod's banner.|
 |`groupUI`|`FlxTypedSpriteGroup`|The UI group of your mod's banner.|
 |`logo`|`FunkinSprite`|The logo sprite of your mod's banner, part of `groupUI`.<br>Initially auto-resized to 350px height.|
@@ -57,6 +57,7 @@ Example binding:
 ```haxe
 package exampleMod;
 
+import flixel.addons.display.FlxBackdrop;
 import flixel.tweens.FlxEase;
 import flixel.tweens.FlxTween;
 
@@ -115,8 +116,38 @@ class LauncherBinding extends ScriptedModule {
 					data.logo.updateHitbox();
 					
 					var mySprite:FunkinSprite = new FunkinSprite().loadTexture("exampleMod/mySprite");
+					mySprite.visible = false;
 					data.groupBG.add(mySprite);
 					data.mySprite = mySprite;
+					
+					var overlay:FlxBackdrop = new FlxBackdrop().makeGraphic(2, 2, 0xffffffff);
+					overlay.scale.set(640, 320);
+					overlay.color = 0xff000000;
+					overlay.alpha = 0;
+					data.groupUI.add(overlay);
+					data.overlay = overlay;
+				},
+				
+				onUpdate: function(data:Dynamic, elapsed:Float):Void {
+					data.mySprite.angle += 90 * elapsed;
+				},
+				
+				onFocus: function(data:Dynamic):Void {
+					FlxTween.globalManager.cancelTweensOf(data.overlay, ["alpha"]);
+					FlxTween.tween(data.overlay, {alpha: 1}, 0.5, {ease: FlxEase.cubeIn, onComplete: function():Void {
+						data.mySprite.visible = true;
+						
+						FlxTween.tween(data.overlay, {alpha: 0}, 0.5, {ease: FlxEase.cubeOut});
+					});
+				},
+				
+				onUnfocus: function(data:Dynamic):Void {
+					FlxTween.globalManager.cancelTweensOf(data.overlay, ["alpha"]);
+					FlxTween.tween(data.overlay, {alpha: 1}, 0.5, {ease: FlxEase.cubeIn, onComplete: function():Void {
+						data.mySprite.visible = false;
+						
+						FlxTween.tween(data.overlay, {alpha: 0}, 0.5, {ease: FlxEase.cubeOut});
+					});
 				},
 				
 				onSelect: function(data:Dynamic):Void {
@@ -130,10 +161,6 @@ class LauncherBinding extends ScriptedModule {
 				onCancel: function(data:Dynamic):Void {
 					FlxTween.globalManager.cancelTweensOf(data.logo.scale, ["x", "y"]);
 					FlxTween.tween(data.logo.scale, {x: 0.5, y: 0.5}, 0.5, {ease: FlxEase.expoOut});
-				},
-				
-				onUpdate: function(data:Dynamic, elapsed:Float):Void {
-					data.mySprite.angle += 90 * elapsed;
 				},
 				
 				onInit: function(data:Dynamic):Void {

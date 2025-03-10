@@ -132,6 +132,7 @@ typedef LauncherData = {
  * ```haxe
  * package exampleMod;
  * 
+ * import flixel.addons.display.FlxBackdrop;
  * import flixel.tweens.FlxEase;
  * import flixel.tweens.FlxTween;
  * 
@@ -190,8 +191,38 @@ typedef LauncherData = {
  *                     data.logo.updateHitbox();
  *                     
  *                     var mySprite:FunkinSprite = new FunkinSprite().loadTexture("exampleMod/mySprite");
+ *                     mySprite.visible = false;
  *                     data.groupBG.add(mySprite);
  *                     data.mySprite = mySprite;
+ *                     
+ *                     var overlay:FlxBackdrop = new FlxBackdrop().makeGraphic(2, 2, 0xffffffff);
+ *                     overlay.scale.set(640, 325);
+ *                     overlay.color = 0xff000000;
+ *                     overlay.alpha = 0;
+ *                     data.groupUI.add(overlay);
+ *                     data.overlay = overlay;
+ *                 },
+ *                 
+ *                 onUpdate: function(data:Dynamic, elapsed:Float):Void {
+ *                     data.mySprite.angle += 90 * elapsed;
+ *                 },
+ *                 
+ *                 onFocus: function(data:Dynamic):Void {
+ *                     FlxTween.globalManager.cancelTweensOf(data.overlay, ["alpha"]);
+ *                     FlxTween.tween(data.overlay, {alpha: 1}, 0.5, {ease: FlxEase.cubeIn, onComplete: function():Void {
+ *                         data.mySprite.visible = true;
+ *                         
+ *                         FlxTween.tween(data.overlay, {alpha: 0}, 0.5, {ease: FlxEase.cubeOut});
+ *                     });
+ *                 },
+ *                 
+ *                 onUnfocus: function(data:Dynamic):Void {
+ *                     FlxTween.globalManager.cancelTweensOf(data.overlay, ["alpha"]);
+ *                     FlxTween.tween(data.overlay, {alpha: 1}, 0.5, {ease: FlxEase.cubeIn, onComplete: function():Void {
+ *                         data.mySprite.visible = false;
+ *                         
+ *                         FlxTween.tween(data.overlay, {alpha: 0}, 0.5, {ease: FlxEase.cubeOut});
+ *                     });
  *                 },
  *                 
  *                 onSelect: function(data:Dynamic):Void {
@@ -205,10 +236,6 @@ typedef LauncherData = {
  *                 onCancel: function(data:Dynamic):Void {
  *                     FlxTween.globalManager.cancelTweensOf(data.logo.scale, ["x", "y"]);
  *                     FlxTween.tween(data.logo.scale, {x: 0.5, y: 0.5}, 0.5, {ease: FlxEase.expoOut});
- *                 },
- *                 
- *                 onUpdate: function(data:Dynamic, elapsed:Float):Void {
- *                     data.mySprite.angle += 90 * elapsed;
  *                 },
  *                 
  *                 onInit: function(data:Dynamic):Void {
@@ -240,12 +267,12 @@ class Registry extends ScriptedModule {
 	 */
 	public function bind(data:LauncherData):Null<LauncherData> {
 		if (!Types.isAnonymousObject(data)) {
-			return;
+			return null;
 		}
 		
 		data.name = validateString(data.name);
 		if (data.name == null) {
-			return;
+			return null;
 		}
 		
 		if (registry.exists(data.name)) {
@@ -254,42 +281,24 @@ class Registry extends ScriptedModule {
 		
 		data.target = validateString(data.target);
 		if (data.target == null) {
-			return;
+			return null;
 		}
 		
-		data.logoPath = validateString(data.logoPath, "modlauncher/meta/icon");
-		
-		data.selectSoundPath = validateString(data.selectSoundPath, "confirmMenu");
-		
-		data.selectDuration = Math.max(1.5, validateFloat(data.selectDuration, 1.5));
-		
-		if (data.onSetup == null) {
-			data.onSetup = function(data:LauncherData):Void {};
-		}
-		
-		if (data.onUpdate == null) {
-			data.onUpdate = function(data:LauncherData, elapsed:Float):Void {};
-		}
-		
-		if (data.onFocus == null) {
-			data.onFocus = function(data:LauncherData):Void {};
-		}
-		
-		if (data.onUnfocus == null) {
-			data.onUnfocus = function(data:LauncherData):Void {};
-		}
-		
-		if (data.onSelect == null) {
-			data.onSelect = function(data:LauncherData):Void {};
-		}
-		
-		if (data.onCancel == null) {
-			data.onCancel = function(data:LauncherData):Void {};
-		}
-		
-		if (data.onInit == null) {
-			data.onInit = function(data:LauncherData):Void {};
-		}
+		data = {
+			name: data.name,
+			target: data.target,
+			logoPath: validateString(data.logoPath, "modlauncher/meta/icon"),
+			selectSoundPath: validateString(data.selectSoundPath, "confirmMenu"),
+			selectDuration: Math.max(1.5, validateFloat(data.selectDuration, 1.5)),
+			
+			onSetup: data.onSetup == null ? function(data:LauncherData):Void {} : data.onSetup,
+			onUpdate: data.onUpdate == null ? function(data:LauncherData, elapsed:Float):Void {} : data.onUpdate,
+			onFocus: data.onFocus == null ? function(data:LauncherData):Void {} : data.onFocus,
+			onUnfocus: data.onUnfocus == null ? function(data:LauncherData):Void {} : data.onUnfocus,
+			onSelect: data.onSelect == null ? function(data:LauncherData):Void {} : data.onSelect,
+			onCancel: data.onCancel == null ? function(data:LauncherData):Void {} : data.onCancel,
+			onInit: data.onInit == null ? function(data:LauncherData):Void {} : data.onInit
+		};
 		
 		registry.set(data.name, data);
 		

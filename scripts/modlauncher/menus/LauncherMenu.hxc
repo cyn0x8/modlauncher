@@ -23,7 +23,6 @@ import funkin.modding.base.ScriptedFlxRuntimeShader;
 import funkin.modding.base.ScriptedMusicBeatState;
 import funkin.modding.module.ModuleHandler;
 import funkin.modding.module.ScriptedModule;
-import funkin.util.MathUtil;
 
 class LauncherMenu extends ScriptedModule {
 	public function new() {
@@ -57,6 +56,7 @@ class LauncherMenu extends ScriptedModule {
 	
 	private var menuMix:Float = 0;
 	private var menuTween:Null<NumTween> = null;
+	private var saturationShaderFilter:ShaderFilter = null;
 	private var saturationShader:ScriptedFlxRuntimeShader = null;
 	
 	private var selecting:Bool = false;
@@ -70,10 +70,10 @@ class LauncherMenu extends ScriptedModule {
 			return;
 		}
 		
-		camBG = new FunkinCamera("modlauncher: camBG", 0, 0, 1280, 720, 1);
+		camBG = new FunkinCamera("modlauncher: camBG (modlauncher.menus.LauncherMenu)", 0, 0, 1280, 720, 1);
 		camBG.bgColor = 0x00000000;
 		
-		camUI = new FunkinCamera("modlauncher: camUI", 0, 0, 1280, 720, 1);
+		camUI = new FunkinCamera("modlauncher: camUI (modlauncher.menus.LauncherMenu)", 0, 0, 1280, 720, 1);
 		camUI.bgColor = 0x00000000;
 		
 		groupBG = new FlxTypedSpriteGroup();
@@ -91,13 +91,14 @@ class LauncherMenu extends ScriptedModule {
 		groupBG.add(grid);
 		grid.scrollFactor.set(0.25, 0.25);
 		
-		overlayBG = new FlxBackdrop().makeGraphic(1280, 720, 0xff000000);
+		overlayBG = new FlxBackdrop().makeGraphic(2, 2, 0xff000000);
+		overlayBG.scale.set(640, 360);
 		overlayBG.alpha = 0.0001;
 		groupBG.add(overlayBG);
 		
 		var registry:StringMap<Dynamic> = ModuleHandler.getModule("modlauncher.Registry").scriptGet("registry");
 		if (registry.iterator().hasNext()) {
-			for (entry in registry) {
+			for (entry in registry.iterator()) {
 				launcherEntries.push(entry);
 			}
 			
@@ -109,7 +110,7 @@ class LauncherMenu extends ScriptedModule {
 				var idx:Int = i;
 				var entry:Dynamic = launcherEntries[idx];
 				
-				var entryCamera:FunkinCamera = new FunkinCamera("modlauncher: cam (" + entry.name + ")", 0, 720, 1280, 450, 1);
+				var entryCamera:FunkinCamera = new FunkinCamera("modlauncher: cam \"" + entry.name + "\" (modlauncher.menus.LauncherMenu)", 0, 720, 1280, 450, 1);
 				entryCamera.bgColor = 0x00000000;
 				entry.camera = entryCamera;
 				
@@ -247,7 +248,8 @@ class LauncherMenu extends ScriptedModule {
 		logo.antialiasing = false;
 		groupUI.add(logo);
 		
-		overlayUI = new FlxBackdrop().makeGraphic(1280, 720, 0xff000000);
+		overlayUI = new FlxBackdrop().makeGraphic(2, 2, 0xff000000);
+		overlayUI.scale.set(640, 360);
 		overlayUI.alpha = 0.0001;
 		groupUI.add(overlayUI);
 		
@@ -259,16 +261,16 @@ class LauncherMenu extends ScriptedModule {
 		
 		FlxG.cameras.add(camUI, false);
 		
-		saturationShader = ScriptedFlxRuntimeShader.init("be.shader.shaders.SaturationShader");
-		FlxG.camera.filters = [
-			new ShaderFilter(saturationShader)
-		];
+		if (FlxG.camera.filters == null) {
+			FlxG.camera.filters = new Array();
+		}
+		
+		FlxG.camera.filters.push(saturationShaderFilter = new ShaderFilter(saturationShader = ScriptedFlxRuntimeShader.init("be.shader.shaders.SaturationShader")));
 		
 		music = FunkinSound.load(Paths.music("chartEditorLoop/chartEditorLoop"), 0, true, true, true);
 		
 		menu = ModuleHandler.getModule("be.menu.Menu").scriptCall("new_Menu", [{
 			items: menuItems,
-			autoEnable: true,
 			
 			sizeX: menuItems.length,
 			
@@ -454,10 +456,6 @@ class LauncherMenu extends ScriptedModule {
 			updateText(i, 0, true);
 		}
 		
-		FlxG.state.leftWatermarkText.cameras = [camUI];
-		FlxG.state.remove(FlxG.state.leftWatermarkText, true);
-		FlxG.state.add(FlxG.state.leftWatermarkText);
-		
 		exists = true;
 	}
 	
@@ -476,8 +474,8 @@ class LauncherMenu extends ScriptedModule {
 		var targetX:Float = 640 - 400 * (menu.selection - i);
 		entryText.x = force ? targetX : ModuleHandler.getModule("be.util.MathUtil").scriptCall("smoothLerpDecay", [entryText.x, targetX, elapsed, 0.025]);
 		
-		var targety:Float = i == menu.selection ? -20 : 20;
-		entryText.y = force ? launcherNames.y + targety : ModuleHandler.getModule("be.util.MathUtil").scriptCall("smoothLerpDecay", [entryText.y, launcherNames.y + targety, elapsed, 0.05]);
+		var targetY:Float = i == menu.selection ? -20 : 20;
+		entryText.y = force ? launcherNames.y + targetY : ModuleHandler.getModule("be.util.MathUtil").scriptCall("smoothLerpDecay", [entryText.y, launcherNames.y + targetY, elapsed, 0.05]);
 		
 		var targetAlpha:Float = Math.max(0.1, 1 - 0.35 * Math.abs(menu.selection - i));
 		entryText.alpha = force ? targetAlpha : ModuleHandler.getModule("be.util.MathUtil").scriptCall("smoothLerpDecay", [entryText.alpha, targetAlpha, elapsed, 0.05]);
@@ -570,13 +568,18 @@ class LauncherMenu extends ScriptedModule {
 			menuTween = null;
 		}
 		
-		saturationShader.scriptCall("set_saturation", [0]);
+		FlxG.camera.filters.remove(saturationShaderFilter);
+		if (FlxG.camera.filters.length == 0) {
+			FlxG.camera.filters = null;
+		}
+		
+		saturationShaderFilter = null;
 		saturationShader = null;
-		FlxG.camera.filters = new Array();
 		
 		selecting = false;
 		
 		if (selectSound != null) {
+			selectSound.stop();
 			selectSound.destroy();
 			selectSound = null;
 		}
@@ -591,7 +594,7 @@ class LauncherMenu extends ScriptedModule {
 			FlxG.sound.music.volume = 1;
 		}
 		
-		FlxG.state.leftWatermarkText.cameras = [FlxG.camera];
+		FlxG.state.leftWatermarkText.alpha = 1;
 		
 		exists = false;
 	}

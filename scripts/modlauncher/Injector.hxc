@@ -11,19 +11,24 @@ class Injector extends ScriptedModule {
 		super("modlauncher.Injector", 2147483647);
 	}
 	
+	/**
+	 * Just in case you want to temporarily disable modlauncher injection.
+	 */
+	public var dontInject:Bool = false;
+	
+	override public function onStateChangeBegin(event:StateChangeScriptEvent):Void {
+		destroy();
+	}
+	
 	override public function onStateChangeEnd(event:StateChangeScriptEvent):Void {
 		if (Std.isOfType(event.targetState, MainMenuState)) {
 			tryInject();
-			
-			FlxG.signals.preStateSwitch.addOnce(function():Void {
-				destroy();
-			});
 		}
 	}
 	
 	private var injected:Bool = false;
 	private function tryInject():Void {
-		if (injected) {
+		if (injected || dontInject) {
 			return;
 		}
 		

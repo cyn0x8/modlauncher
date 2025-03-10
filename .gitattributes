@@ -7,7 +7,6 @@
 *.md text
 
 *.hxc text
-*.frag text
 *.json text
 
 *.png binary

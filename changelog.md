@@ -2,14 +2,17 @@
 
 ## v4.0.0
 
-- Retroactively improved GitHub changelog.
-- Added dependency [`beast-engine` v1.x](https://github.com/rizz-residence/beast-engine/releases) (formerly `cynlib`).
-- Removed unnecessary code and fixed some documentation.
+- Retroactively improved changelog.
+- Improved documentation.
+- Removed dependency `cynlib`.
+- Added dependency [`beast-engine` v1.x](https://github.com/rizz-residence/beast-engine/releases).
+- Added an option to disable the injector.
+- The menu desaturation shader is now appended to the shader list instead of overriding it.
 
 ## v3.0.2
 
 - Improved documentation and added it to the code.
-- Replaced internal usages of `FlxTimer` with `cynlib.sequence.Sequence`.
+- Replaced internal usages of `FlxTimer` with `Sequence`.
 
 ## v3.0.1
 
